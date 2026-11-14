@@ -54,7 +54,14 @@ export interface Scenario {
   priorities: string[];
   constraints: Record<string, unknown>;
   crop_sequence: string[];
-  analysis_result: { reasons: string[]; warnings: string[]; score: number };
+  analysis_result: {
+    reasons: string[];
+    warnings: string[];
+    score: number;
+    risks?: string[];
+    sources?: string[];
+    criteria?: { soil: number; water: number; climate: number | null };
+  };
 }
 export interface FarmData {
   farms: Farm[];

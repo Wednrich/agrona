@@ -1,9 +1,10 @@
+import { writeField } from "./field-write";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./auth";
 import { supabase } from "./supabase";
 import { initialDemo } from "./demo";
-import type { FarmData, Field } from "./types";
-import { area, polygon, kinks } from "@turf/turf";
+import type { FarmData } from "./types";
+import { validateBoundary } from "./field-boundary";
 const demoKey = "field-shift-demo-v1";
 function demoData(): FarmData {
   const value = localStorage.getItem(demoKey);
@@ -15,33 +16,6 @@ function demoData(): FarmData {
     }
   }
   return structuredClone(initialDemo);
-}
-export function validateBoundary(boundary: Field["boundary"]) {
-  if (
-    !boundary ||
-    boundary.type !== "Polygon" ||
-    !Array.isArray(boundary.coordinates) ||
-    boundary.coordinates.length !== 1
-  )
-    throw new Error("Нужен полигон без внутренних колец.");
-  const ring = boundary.coordinates[0];
-  if (
-    ring.length < 4 ||
-    ring.length > 10000 ||
-    ring.some(
-      (p) =>
-        p.length !== 2 ||
-        !p.every(Number.isFinite) ||
-        Math.abs(p[0]) > 180 ||
-        Math.abs(p[1]) > 90,
-    ) ||
-    JSON.stringify(ring[0]) !== JSON.stringify(ring[ring.length - 1])
-  )
-    throw new Error("Некорректные координаты или незамкнутая граница.");
-  const p = polygon(boundary.coordinates);
-  if (kinks(p).features.length || area(p) < 1)
-    throw new Error("Граница пересекает себя или площадь слишком мала.");
-  return area(p) / 10000;
 }
 export function useData() {
   const { demo, user } = useAuth();
@@ -82,7 +56,7 @@ export function useData() {
     if (table === "fields" && !remove) {
       row = {
         ...row,
-        area_hectares: validateBoundary(row.boundary as Field["boundary"]),
+        area_hectares: validateBoundary(row.boundary),
       };
     }
     if (!remove && table === "field_seasons") {
@@ -110,7 +84,8 @@ export function useData() {
     }
     if (
       !remove &&
-      (table === "farms" || table === "fields") &&
+      (table === "farms" ||
+        (table === "fields" && (row.id == null || "name" in row))) &&
       !String(row.name ?? "").trim()
     )
       throw new Error("Введите название.");
@@ -155,28 +130,18 @@ export function useData() {
           throw new Error("Сезон за этот год уже существует.");
         const index = arr.findIndex((x) => x.id === id);
         if (index >= 0) arr[index] = { ...arr[index], ...row, id };
+        else if (table === "fields" && row.id != null)
+          throw new Error("Поле не найдено.");
         else arr.push({ ...row, id });
       }
       localStorage.setItem(demoKey, JSON.stringify(data));
     } else {
       if (!supabase) throw new Error("Supabase не настроен");
-      const payload =
-        table === "fields" && !remove
-          ? {
-              ...row,
-              boundary: `SRID=4326;POLYGON((${(row.boundary as Field["boundary"]).coordinates[0].map((p) => p.join(" ")).join(",")}))`,
-            }
-          : row;
       if (table === "fields" && !remove) {
-        const { data: saved, error } = await supabase
-          .from("fields")
-          .upsert(payload)
-          .select("id")
-          .single();
-        if (error) throw error;
+        const fieldId = await writeField(supabase, row);
         void supabase.functions
           .invoke("hls-vegetation", {
-            body: { fieldId: saved.id, year: new Date().getUTCFullYear() - 1 },
+            body: { fieldId, year: new Date().getUTCFullYear() - 1 },
           })
           .then(({ error }) => {
             if (error)
@@ -191,11 +156,16 @@ export function useData() {
       } else {
         const result = remove
           ? await supabase.from(table).delete().eq("id", row.id)
-          : await supabase.from(table).upsert(payload);
+          : await supabase.from(table).upsert(row);
         if (result.error) throw result.error;
       }
     }
     await client.invalidateQueries({ queryKey: key });
+    if (table === "fields" && row.id != null) {
+      await client.invalidateQueries({
+        queryKey: ["rotation-climate", demo ? "demo" : user?.id, row.id],
+      });
+    }
   }
   return { ...query, save };
 }

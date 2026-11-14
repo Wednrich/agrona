@@ -6,7 +6,7 @@ import {
 } from "../components/RegistrationLocations";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { Button } from "../components/ui/button";
@@ -24,7 +24,7 @@ export default function Auth() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [visible, setVisible] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState("");
-  const { enterDemo } = useAuth();
+  const { enterDemo, user, loading } = useAuth();
   const navigate = useNavigate();
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -95,6 +95,8 @@ export default function Auth() {
       setBusy(false);
     }
   }
+  if (loading) return <p role="status">Восстанавливаем сессию…</p>;
+  if (user && mode !== "password") return <Navigate to="/map" replace />;
   return (
     <main className="auth-page">
       <Link to="/" className="brand">

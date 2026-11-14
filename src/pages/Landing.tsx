@@ -1,3 +1,4 @@
+import { workspaceAccess } from "../lib/workspace-access";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Sprout,
@@ -11,10 +12,12 @@ import {
 import { useAuth } from "../lib/auth";
 import { Button } from "../components/ui/button";
 export default function Landing() {
-  const { enterDemo } = useAuth();
+  const { enterDemo, user, loading } = useAuth();
+  const { destination } = workspaceAccess(user?.id, loading, false);
   const navigate = useNavigate();
   const demo = () => {
-    enterDemo();
+    if (loading) return;
+    if (!user) enterDemo();
     navigate("/map");
   };
   return (
@@ -26,7 +29,9 @@ export default function Landing() {
         <div>
           <a href="#approach">Возможности</a>
           <a href="#data">Данные NASA</a>
-          <Link to="/auth">Войти ↗</Link>
+          <Link to={destination}>
+            {user ? "Открыть приложение" : "Войти"} ↗
+          </Link>
         </div>
       </nav>
       <section className="hero">
@@ -49,11 +54,12 @@ export default function Landing() {
             решения на основе данных NASA.
           </p>
           <div className="row">
-            <Link className="button primary" to="/auth">
-              Начать работу <ArrowUpRight size={17} />
+            <Link className="button primary" to={destination}>
+              {user ? "Открыть приложение" : "Начать работу"}{" "}
+              <ArrowUpRight size={17} />
             </Link>
-            <Button variant="ghost" onClick={demo}>
-              Попробовать демо <ArrowRight size={16} />
+            <Button variant="ghost" onClick={demo} disabled={loading}>
+              {user ? "К карте" : "Попробовать демо"} <ArrowRight size={16} />
             </Button>
           </div>
           <div className="hero-foot">
@@ -175,8 +181,8 @@ export default function Landing() {
         <span className="eyebrow">СЛЕДУЮЩИЙ ШАГ — ВАШ</span>
         <h2>Начните с одного поля.</h2>
         <p>Исследуйте демохозяйство без регистрации.</p>
-        <Button onClick={demo}>
-          Открыть демо <ArrowUpRight size={18} />
+        <Button onClick={demo} disabled={loading}>
+          {user ? "К карте" : "Открыть демо"} <ArrowUpRight size={18} />
         </Button>
       </section>
       <footer>

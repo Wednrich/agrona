@@ -34,6 +34,7 @@ type VegetationResponse = {
   pending?: boolean;
   queued?: boolean;
   warning?: string;
+  unsupported?: boolean;
 };
 
 export default function HlsVegetationAnalytics({
@@ -140,7 +141,7 @@ export default function HlsVegetationAnalytics({
                 : `За ${year} год не найдено снимков с пикселями внутри поля.`}
             </p>
           )}
-          {!waiting && warning && (
+          {!waiting && warning && !query.data?.unsupported && (
             <div>
               <Button variant="outline" onClick={() => void query.refetch()}>
                 Проверить снова

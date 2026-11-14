@@ -1,3 +1,4 @@
+import { workspaceAccess } from "./workspace-access";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
@@ -30,10 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(!!supabase);
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -44,13 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => data.subscription.unsubscribe();
   }, []);
+  const access = workspaceAccess(user?.id, loading, demo);
   return (
     <Context.Provider
       value={{
         user,
-        demo,
+        demo: access.demo,
         loading,
         enterDemo: () => {
+          if (!access.canEnterDemo) return;
           sessionStorage.setItem("field-shift-demo", "true");
           setDemo(true);
         },

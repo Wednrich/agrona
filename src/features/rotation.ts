@@ -1,169 +1,500 @@
 import type { Crop, Season, Scenario, Observation } from "../lib/types";
-import { climateSummary } from "./climate";
+import {
+  summarizeRotationClimate,
+  type RotationPeriod,
+} from "./rotation-climate";
+
 export interface Constraints {
   allowed: string[];
   excluded: string[];
   horizon: number;
   irrigation: boolean;
   maxSeasonDays: number;
+  soilType?: string;
+  period?: RotationPeriod;
+  currentSequence?: string[];
+  currentName?: string;
 }
+
+type Criteria = { soil: number; water: number; climate: number };
+type Candidate = { crops: Crop[]; points: Criteria; rank: number; key: string };
+const beamWidth = 24;
+export function rotationWeights(priorities: string[]): Criteria {
+  return {
+    soil: priorities.includes("soil") ? 2 : 1,
+    water: priorities.includes("water") ? 2 : 1,
+    climate: priorities.includes("climate") ? 2 : 1,
+  };
+}
+export type RotationDiagnostics = {
+  eligibleCrops: number;
+  admissibleSequences: string;
+  seasonDays: number;
+  weights: Criteria;
+  coverage: ReturnType<typeof summarizeRotationClimate>["coverage"] | null;
+  choices: { role: string; rule: string; weights: Criteria; rank: number }[];
+};
+const zero = { soil: 0, water: 0, climate: 0 };
+const format = (value: number) => Number(value.toFixed(1));
+
 export function generateRotations(
   crops: Crop[],
   history: Season[],
   fieldId: string,
   priorities: string[],
   constraints: Constraints,
-  climate: Observation[] = [],
+  observations: Observation[] = [],
+  diagnose?: (details: RotationDiagnostics) => void,
 ): Scenario[] {
+  const { horizon, period, maxSeasonDays, soilType, irrigation } = constraints;
+  if (!Number.isInteger(horizon) || horizon < 2 || horizon > 20)
+    throw new Error("Горизонт должен быть от 2 до 20 лет.");
   if (
-    !Number.isInteger(constraints.horizon) ||
-    constraints.horizon < 2 ||
-    constraints.horizon > 5
+    !Number.isInteger(maxSeasonDays) ||
+    maxSeasonDays < 1 ||
+    maxSeasonDays > 366
   )
-    throw new Error("Горизонт должен быть от 2 до 5 лет.");
-  const allowed = crops.filter(
-    (c) =>
-      constraints.allowed.includes(c.id) &&
-      !constraints.excluded.includes(c.id) &&
-      c.growing_season_days <= constraints.maxSeasonDays,
+    throw new Error("Укажите доступную длину сезона от 1 до 366 дней.");
+
+  const weather = period
+    ? summarizeRotationClimate(observations, period)
+    : null;
+  const seasonDays = Math.min(maxSeasonDays, weather?.days ?? maxSeasonDays);
+  const enabled = new Set(constraints.allowed);
+  const excluded = new Set(constraints.excluded);
+  const byId = new Map(crops.map((crop) => [crop.id, crop]));
+  const eligible = new Set(
+    crops
+      .filter(
+        (crop) =>
+          enabled.has(crop.id) &&
+          !excluded.has(crop.id) &&
+          crop.growing_season_days <= seasonDays,
+      )
+      .map((crop) => crop.id),
   );
-  if (!allowed.length)
-    throw new Error("Нет культур, соответствующих ограничениям.");
-  const last = crops.find(
-    (c) => c.id === [...history].sort((a, b) => b.year - a.year)[0]?.crop_id,
+  const pool = crops.filter((crop) => eligible.has(crop.id));
+
+  const seasons = [...history].sort((a, b) => a.year - b.year);
+  const historyKnown = seasons.filter((season) => byId.has(season.crop_id));
+  const gaps =
+    seasons.length < 2 ||
+    historyKnown.length !== seasons.length ||
+    seasons.some(
+      (season, i) => i > 0 && season.year !== seasons[i - 1].year + 1,
+    );
+  const lastSeason = seasons.at(-1);
+  const last = lastSeason ? byId.get(lastSeason.crop_id) : undefined;
+  const planYear = Math.max(
+    new Date().getUTCFullYear() + 1,
+    (lastSeason?.year ?? 0) + 1,
   );
-  const weather = climateSummary(climate);
-  const dry =
-    climate.length > 300 && weather.missing < 30 && weather.longestDry >= 14;
-  function evaluate(sequence: Crop[], name: string): Scenario {
-    let score = 0;
-    let previous = last;
-    const reasons: string[] = [];
-    const warnings: string[] = [];
-    let repeat = 0,
-      legumes = 0,
-      water = 0;
-    for (const crop of sequence) {
-      if (previous?.crop_family === crop.crop_family) {
-        repeat++;
-        score -= 3;
-      } else if (previous) score += 2;
-      previous = crop;
-      if (crop.nitrogen_fixation) {
-        legumes++;
-        score += priorities.includes("soil") ? 3 : 1;
-      }
-      water += crop.water_requirement_min_mm;
-      if (priorities.includes("water"))
-        score -= crop.water_requirement_min_mm / 100;
-      if (dry && !constraints.irrigation) {
-        if (crop.drought_tolerance === "high")
-          score += priorities.includes("climate") ? 3 : 1;
-        else if (crop.drought_tolerance === "low") {
-          score -= 3;
-          warnings.push(
-            `${crop.name}: низкая засухоустойчивость при выявленном сухом периоде.`,
-          );
-        }
-      }
-      if (!allowed.some((c) => c.id === crop.id))
-        warnings.push(
-          `${crop.name}: не соответствует выбранным ограничениям (базовый сценарий).`,
-        );
+  const predecessor = lastSeason?.year === planYear - 1 ? last : undefined;
+  const historyPenalties = new Map(
+    crops.map((crop) => {
+      const penalty = historyKnown.reduce((sum, season) => {
+        const recorded = byId.get(season.crop_id)!;
+        const similarity =
+          crop.id === recorded.id
+            ? 2
+            : crop.crop_family === recorded.crop_family
+              ? 1
+              : 0;
+        return sum + similarity / Math.max(1, planYear - season.year);
+      }, 0);
+      return [crop.id, penalty];
+    }),
+  );
+  const soil = soilType?.trim();
+  const soilKnown =
+    !!soil && !["не знаю", "другое"].includes(soil.toLowerCase());
+  const sandy =
+    soilKnown &&
+    ["песчаная почва", "супесчаная почва"].includes(soil.toLowerCase());
+  const completeRain = !!weather && weather.coverage.rain === weather.days;
+  const dry = (weather?.longestDry ?? 0) >= 14;
+  const drought = (crop: Crop) =>
+    dry
+      ? crop.drought_tolerance === "low"
+        ? 2
+        : crop.drought_tolerance === "medium"
+          ? 1
+          : 0
+      : 0;
+
+  // Screening signals, in points. Historical weather can lower suitability but cannot disqualify a crop.
+  const cropCriteria = new Map(
+    crops.map((crop) => {
+      const demand = Number(crop.water_requirement_min_mm);
+      const duration = crop.growing_season_days / seasonDays;
+      const risk =
+        (weather?.frostFree != null &&
+        crop.growing_season_days > weather.frostFree
+          ? 2
+          : 0) +
+        ((weather?.hotDays ?? 0) > 0 ? duration : 0) +
+        (weather?.mean != null &&
+        weather.coverage.mean === weather.days &&
+        weather.mean < 10
+          ? duration
+          : 0) +
+        drought(crop);
+      return [
+        crop.id,
+        {
+          soil: Number(crop.nitrogen_fixation) - historyPenalties.get(crop.id)!,
+          water:
+            -demand / 100 -
+            (completeRain ? Math.max(0, demand - weather!.rain!) / 200 : 0) -
+            (sandy && dry ? drought(crop) / 2 : 0),
+          climate: -risk,
+        },
+      ];
+    }),
+  );
+  const weights = rotationWeights(priorities);
+  const score = (p: Criteria, w: Criteria) =>
+    p.soil * w.soil + p.water * w.water + p.climate * w.climate;
+  function extend(
+    candidate: Candidate,
+    crop: Crop,
+    weights: Criteria,
+  ): Candidate {
+    const previous = candidate.crops.at(-1) ?? predecessor;
+    const sameFamily = previous?.crop_family === crop.crop_family;
+    const sameCrop = previous?.id === crop.id;
+    const familyRepeats = candidate.crops.filter(
+      (c) => c.crop_family === crop.crop_family,
+    ).length;
+    const base = cropCriteria.get(crop.id)!;
+    const points = {
+      soil:
+        candidate.points.soil +
+        base.soil -
+        (sameFamily ? 2 : 0) -
+        (sameCrop ? 2 : 0) -
+        familyRepeats / (candidate.crops.length + 1) +
+        (previous?.nitrogen_fixation && !sameFamily ? 1 : 0),
+      water: candidate.points.water + base.water,
+      climate: candidate.points.climate + base.climate,
+    };
+    return {
+      crops: [...candidate.crops, crop],
+      points,
+      rank: score(points, weights),
+      key: candidate.key + "|" + crop.id,
+    };
+  }
+  const empty: Candidate = { crops: [], points: zero, rank: 0, key: "" };
+  function search(focus: Criteria) {
+    let beam = [empty];
+    for (let year = 0; year < horizon; year++) {
+      beam = beam
+        .flatMap((candidate) =>
+          pool.map((crop) => extend(candidate, crop, focus)),
+        )
+        .sort((a, b) => b.rank - a.rank || a.key.localeCompare(b.key))
+        .slice(0, beamWidth);
     }
-    reasons.push(
-      `${new Set(sequence.map((c) => c.crop_family)).size} семейства; ${repeat} последовательных повторов с учётом последнего сезона.`,
+    return beam;
+  }
+
+  const knownPlan = constraints.currentSequence?.map((id) => byId.get(id));
+  const hasPlan =
+    knownPlan?.length === horizon && knownPlan.every((crop) => !!crop);
+  const baseline = hasPlan
+    ? (knownPlan as Crop[]).reduce(
+        (candidate, crop) => extend(candidate, crop, weights),
+        empty,
+      )
+    : last
+      ? Array.from({ length: horizon }, () => last).reduce(
+          (candidate, crop) => extend(candidate, crop, weights),
+          empty,
+        )
+      : search(weights)[0];
+  const climateFocus =
+    priorities.includes("climate") && !priorities.includes("soil");
+  const withFocus = (key: keyof Criteria) => ({
+    ...weights,
+    [key]: weights[key] + 3,
+  });
+  const climateSignalsAvailable =
+    !!weather &&
+    (weather.frostFree !== null ||
+      weather.coverage.mean === weather.days ||
+      weather.coverage.max === weather.days ||
+      (weather.hotDays ?? 0) > 0 ||
+      dry);
+  const waterWeights = withFocus("water");
+  const thirdFocus =
+    climateFocus && climateSignalsAvailable ? "climate" : "soil";
+  const thirdWeights = withFocus(thirdFocus);
+  const water =
+    baseline &&
+    search(waterWeights).find((candidate) => candidate.key !== baseline.key);
+  const resilience =
+    baseline &&
+    search(thirdWeights).find(
+      (candidate) =>
+        candidate.key !== baseline.key && candidate.key !== water?.key,
     );
-    reasons.push(
-      `${legumes} бобовых сезона: возможная фиксация азота при подходящих условиях.`,
-    );
-    reasons.push(
-      `Средняя нижняя граница справочной потребности: ${Math.round(water / sequence.length)} мм за сезон. Это не расчёт полива.`,
-    );
-    if (repeat)
-      warnings.push(
-        "Повторение семейства может повышать фитосанитарные риски; требуется местная проверка.",
-      );
-    if (!history.length)
-      warnings.push("История культур отсутствует: предшественник неизвестен.");
-    if (!climate.length)
-      warnings.push(
-        "Климатические наблюдения не загружены: пригодность по климату не подтверждена.",
-      );
-    else if (dry)
+  if (diagnose) {
+    const choices: RotationDiagnostics["choices"] = [];
+    if (baseline)
+      choices.push({
+        role: "baseline",
+        rule: hasPlan
+          ? "selected-saved-plan"
+          : last
+            ? "repeat-latest-recorded-crop"
+            : "best-baseline-beam-candidate",
+        weights,
+        rank: baseline.rank,
+      });
+    if (water)
+      choices.push({
+        role: "water",
+        rule: "highest-ranked-distinct-beam-candidate",
+        weights: waterWeights,
+        rank: water.rank,
+      });
+    if (resilience)
+      choices.push({
+        role: thirdFocus,
+        rule: "highest-ranked-distinct-beam-candidate",
+        weights: thirdWeights,
+        rank: resilience.rank,
+      });
+    diagnose({
+      eligibleCrops: pool.length,
+      admissibleSequences: (BigInt(pool.length) ** BigInt(horizon)).toString(),
+      seasonDays,
+      weights,
+      coverage: weather?.coverage ?? null,
+      choices,
+    });
+  }
+  if (!baseline) return [];
+  const count = 1 + Number(!!water) + Number(!!resilience);
+  const baselineWater =
+    baseline.crops.reduce(
+      (sum, crop) => sum + Number(crop.water_requirement_min_mm),
+      0,
+    ) / horizon;
+
+  function explain(
+    candidate: Candidate,
+    name: string,
+    baselineVariant: boolean,
+  ): Scenario {
+    const sequence = candidate.crops;
+    const entry = predecessor ? [predecessor, ...sequence] : sequence;
+    const repeatedCrop = entry
+      .slice(1)
+      .filter((c, index) => c.id === entry[index].id).length;
+    const repeatedFamily = entry
+      .slice(1)
+      .filter((c, index) => c.crop_family === entry[index].crop_family).length;
+    const legumes = sequence.filter((c) => c.nitrogen_fixation).length;
+    const waterMin =
+      sequence.reduce((sum, c) => sum + Number(c.water_requirement_min_mm), 0) /
+      horizon;
+    const waterMax =
+      sequence.reduce((sum, c) => sum + Number(c.water_requirement_max_mm), 0) /
+      horizon;
+    const reasons = [
+      `В плане ${new Set(sequence.map((c) => c.crop_family)).size} разных семейств. Сезонов с культурами из каталога, отмеченными как азотфиксирующие: ${legumes}.`,
+      `Средняя справочная потребность культур в воде: ${format(waterMin)}–${format(waterMax)} мм за сезон.`,
+      `Доступное окно: ${seasonDays} дн. Самая длительная культура в плане: ${Math.max(...sequence.map((c) => c.growing_season_days))} дн.`,
+    ];
+    if (!baselineVariant && format(waterMin) < format(baselineWater))
       reasons.push(
-        `В наблюдениях: сухой период ${weather.longestDry} дней (осадки < 1 мм/сут). Засухоустойчивость учтена в правилах.`,
+        `Нижний справочный ориентир потребности в воде ниже исходного плана на ${format(baselineWater - waterMin)} мм за сезон.`,
       );
-    else
-      warnings.push(
-        "Нет достаточных оснований для климатического ранжирования; исторический климат не является прогнозом.",
+    if (
+      !baselineVariant &&
+      format(candidate.points.soil / horizon) >
+        format(baseline.points.soil / horizon)
+    )
+      reasons.push(
+        "По правилам истории и чередования этот план набирает больше баллов, чем исходный.",
       );
-    if (priorities.includes("economy"))
-      warnings.push(
-        "Нет местных цен и затрат: экономическая жизнеспособность не оценена.",
+    if (
+      !baselineVariant &&
+      climateSignalsAvailable &&
+      format(candidate.points.climate / horizon) >
+        format(baseline.points.climate / horizon)
+    )
+      reasons.push(
+        "По наблюдавшимся климатическим сигналам этот план получает меньший штраф, чем исходный.",
       );
-    warnings.push(
-      "Урожайность и улучшение почвы не прогнозируются. Уточните сорта, сроки, рынок и фитосанитарные интервалы с местным агрономом.",
-    );
+    if (legumes)
+      reasons.push(
+        "Азотфиксация и польза для предшественника зависят от местных условий и управления остатками.",
+      );
+    if (baselineVariant && !hasPlan)
+      reasons.push(
+        last
+          ? `Текущий план неизвестен. Для сравнения условно повторена последняя записанная культура (${lastSeason!.year}).`
+          : "Текущий план неизвестен. Точка отсчёта выбрана по общим весам среди допустимых вариантов.",
+      );
+    const risks = [
+      ...(repeatedFamily
+        ? [
+            `Соседние повторы: культуры — ${repeatedCrop}, семейства — ${repeatedFamily}. Проверьте фитосанитарные интервалы.`,
+          ]
+        : []),
+      ...sequence
+        .filter(
+          (c, i) => sequence.findIndex((other) => other.id === c.id) === i,
+        )
+        .flatMap((crop) => [
+          ...(!eligible.has(crop.id)
+            ? [
+                `${crop.name}: не подходит под список культур или длину сезона; показана для сравнения с исходным планом.`,
+              ]
+            : []),
+          ...(weather?.frostFree != null &&
+          crop.growing_season_days > weather.frostFree
+            ? [
+                `${crop.name}: справочная длительность выше самого длинного непрерывного окна без заморозков в выбранном периоде.`,
+              ]
+            : []),
+          ...(drought(crop) > 0
+            ? [
+                `${crop.name}: сухой отрезок от 14 дней и ${crop.drought_tolerance === "low" ? "низкая" : "средняя"} справочная засухоустойчивость.`,
+              ]
+            : []),
+        ]),
+      ...((weather?.hotDays ?? 0) > 0
+        ? [
+            "Были дни выше 35 °C. Проверьте чувствительность сорта и сроки уязвимых фаз.",
+          ]
+        : []),
+      ...((weather?.frostDays ?? 0) > 0
+        ? [
+            "В выбранном периоде наблюдались минимумы ≤ 0 °C. Сопоставьте их с посевом и чувствительными фазами.",
+          ]
+        : []),
+      ...(weather?.mean != null &&
+      weather.coverage.mean === weather.days &&
+      weather.mean < 10
+        ? [
+            "Средняя температура периода ниже 10 °C. Длительные культуры получили скрининговый штраф.",
+          ]
+        : []),
+      ...(completeRain && weather!.rain! < waterMin
+        ? [
+            irrigation
+              ? "Осадков было меньше средней нижней справочной потребности. Проверьте доступный объём полива и эффективные осадки."
+              : "Осадков было меньше средней нижней справочной потребности, орошение не указано. Проверьте запасы влаги и эффективные осадки.",
+          ]
+        : []),
+      ...(sandy && dry
+        ? [
+            "Для указанной песчаной или супесчаной почвы при сухом отрезке усилен учёт засухоустойчивости.",
+          ]
+        : []),
+    ];
+    const sources = [
+      `История поля: ${historyKnown.length} распознанных из ${seasons.length} записей${seasons.length ? ` (${seasons[0].year}–${lastSeason!.year})` : ""}.`,
+      "Каталог AGRONA: семейство, продолжительность сезона, справочный диапазон потребности в воде и засухоустойчивость.",
+      soilKnown
+        ? `Тип почвы со слов фермера: ${soil}. В баллах по воде выделены песчаная и супесчаная почвы.`
+        : "Тип почвы не указан.",
+      irrigation
+        ? "Орошение отмечено как доступное. Объём и график подачи неизвестны."
+        : "Орошение не отмечено как доступное.",
+    ];
+    if (weather && Object.values(weather.coverage).some(Boolean)) {
+      const metric = (v: number | null) =>
+        v == null ? "нет данных" : String(format(v));
+      sources.push(
+        `NASA POWER, данные сетки у центра поля, ${weather.start} — ${weather.end}. Средняя температура: ${metric(weather.mean)} °C, осадки за дни с данными: ${metric(weather.rain)} мм, дни ≤ 0 °C: ${metric(weather.frostDays)}, дни > 35 °C: ${metric(weather.hotDays)}, самый длинный наблюдавшийся сухой отрезок (< 1 мм/сут): ${metric(weather.longestDry)} дн.`,
+        `Дней с данными из ${weather.days}: средняя температура ${weather.coverage.mean}, минимальная ${weather.coverage.min}, максимальная ${weather.coverage.max}, осадки ${weather.coverage.rain}.`,
+      );
+    }
+    const missing = [
+      ...(!soilKnown
+        ? ["Нет указанного типа почвы для оценки её текстуры."]
+        : []),
+      ...(climateFocus && !climateSignalsAvailable
+        ? [
+            "Климатических сигналов недостаточно для отдельной климатической альтернативы. Вместо неё показан вариант с акцентом на почву.",
+          ]
+        : []),
+      ...(gaps || !predecessor
+        ? [
+            "История неполная для расчёта предшественника или интервалов возврата. Пропуски не заполнены.",
+          ]
+        : []),
+      ...(!weather || !Object.values(weather.coverage).some(Boolean)
+        ? [
+            "Климатические наблюдения не загружены для выбранного периода и границы. Климатические штрафы не начислены.",
+          ]
+        : Object.values(weather.coverage).some((days) => days < weather.days)
+          ? [
+              "В климатическом ряду есть пропуски. Полная сумма осадков, холодный средний фон и окно без заморозков учитываются в оценке только при полном покрытии соответствующего показателя.",
+            ]
+          : []),
+      "Нужны данные о сорте, эффективных осадках, запасах влаги, почвенных измерениях и доступном объёме полива.",
+      ...(priorities.includes("economy")
+        ? [
+            "Нет местных цен и затрат: экономическая жизнеспособность не оценена, вес экономике не присвоен.",
+          ]
+        : []),
+    ];
+    const warnings = [
+      ...(count < 3
+        ? [
+            `Получилось ${count} разных стратегий. Ограничения по культурам и длине сезона не дают добавить варианты без повторения плана.`,
+          ]
+        : []),
+      ...missing,
+      "Баллы — эвристика пригодности. Историческая погода не предсказывает будущие сезоны.",
+    ];
     return {
       field_id: fieldId,
       name,
       priorities,
-      constraints: { ...constraints },
+      constraints: { ...constraints, planYear },
       crop_sequence: sequence.map((c) => c.id),
       analysis_result: {
-        score: Math.round(score * 10) / 10,
+        score: format(score(candidate.points, weights) / horizon),
         reasons,
-        warnings: [...new Set(warnings)],
+        warnings,
+        risks,
+        sources,
+        criteria: {
+          soil: format(candidate.points.soil / horizon),
+          water: format(candidate.points.water / horizon),
+          climate: climateSignalsAvailable
+            ? format(candidate.points.climate / horizon)
+            : null,
+        },
       },
     };
   }
-  const candidates: Scenario[] = [];
-  function enumerate(seq: Crop[]) {
-    if (seq.length === constraints.horizon) {
-      candidates.push(evaluate(seq, ""));
-      return;
-    }
-    for (const crop of allowed) enumerate([...seq, crop]);
-  }
-  enumerate([]);
-  candidates.sort(
-    (a, b) =>
-      b.analysis_result.score - a.analysis_result.score ||
-      a.crop_sequence.join().localeCompare(b.crop_sequence.join()),
-  );
-  const baseline = evaluate(
-    Array.from({ length: constraints.horizon }, () => last ?? allowed[0]),
-    last ? "Базовый: последняя культура" : "Базовый: первая доступная культура",
-  );
-  const choices = candidates.filter(
-    (c) => c.crop_sequence.join() !== baseline.crop_sequence.join(),
-  );
-  const a = choices[0] ?? candidates[0];
-  const b =
-    choices.find(
-      (c) =>
-        c.crop_sequence.join() !== a.crop_sequence.join() &&
-        c.crop_sequence[0] !== a.crop_sequence[0],
-    ) ??
-    choices[1] ??
-    a;
   return [
-    baseline,
-    { ...a, name: "Альтернатива A" },
-    {
-      ...b,
-      name: "Альтернатива B",
-      analysis_result: {
-        ...b.analysis_result,
-        warnings:
-          b === a
-            ? [
-                "Ограничения допускают только одну альтернативу. Этот вариант совпадает с A.",
-                ...b.analysis_result.warnings,
-              ]
-            : b.analysis_result.warnings,
-      },
-    },
+    explain(
+      baseline,
+      hasPlan
+        ? `Текущий план: ${constraints.currentName ?? "выбранная последовательность"}`
+        : "Базовый сценарий для сравнения",
+      true,
+    ),
+    ...(water ? [explain(water, "Альтернатива: экономия воды", false)] : []),
+    ...(resilience
+      ? [
+          explain(
+            resilience,
+            climateFocus && climateSignalsAvailable
+              ? "Альтернатива: климатический риск"
+              : "Альтернатива: здоровье почвы",
+            false,
+          ),
+        ]
+      : []),
   ];
 }

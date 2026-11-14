@@ -39,11 +39,12 @@ Deno.serve(async (request) => {
         400,
       );
     const { data: field, error: fieldError } = await reader
-      .rpc("hls_field", { p_field: fieldId })
+      .rpc("hls_field_preflight", { p_field: fieldId })
       .maybeSingle();
     if (fieldError) throw fieldError;
     if (!field) return reply({ error: "Поле недоступно." }, 404);
-    const revision = (field as { revision: string }).revision;
+    const preflight = field as { revision: string; reason: string | null };
+    const { revision, reason } = preflight;
     const scope = {
       field_id: fieldId,
       provider: "NASA HLS",
@@ -70,6 +71,22 @@ Deno.serve(async (request) => {
       metadata: cache.data?.source_metadata,
       cached: !!cache.data,
     };
+    if (reason) {
+      const details: Record<string, string> = {
+        area: "Площадь поля превышает ориентир 22 500 га для анализа целиком на сетке 30 м.",
+        window:
+          "По предварительной оценке прямоугольное окно поля на сетке 30 м превышает лимит 250 000 пикселей. Это возможно и для узкого поля.",
+        extent:
+          "Граница слишком протяжённая для расчёта растрового окна в соседних зонах UTM.",
+        projection: "Для этой границы не удалось оценить окно в проекции UTM.",
+      };
+      return reply({
+        ...result,
+        unsupported: true,
+        pending: false,
+        warning: `NASA HLS не может запустить анализ этого поля. ${details[reason] ?? "Граница не подходит для предварительной оценки."} Поле доступно для климатической аналитики.`,
+      });
+    }
     if (job.data?.status === "running") {
       return reply({
         ...result,

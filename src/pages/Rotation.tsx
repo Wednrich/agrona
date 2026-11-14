@@ -1,3 +1,4 @@
+import { rotationClimateKey } from "../lib/field-write";
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -13,14 +14,25 @@ import {
 import { useData } from "../lib/data";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
-import { generateRotations } from "../features/rotation";
+import {
+  generateRotations,
+  rotationWeights,
+  type RotationDiagnostics,
+} from "../features/rotation";
+import { matchesRotationGeometry } from "../features/rotation-climate";
+import { selectClimatePeriod, suggestedSeason } from "../features/climate";
+import { initialDemo } from "../lib/demo";
 import { FieldPicker } from "../components/FieldPicker";
 import type { Scenario, Observation } from "../lib/types";
 import { Button } from "../components/ui/button";
 export default function Rotation() {
   const { fieldId } = useParams();
+  return <RotationForm key={fieldId} fieldId={fieldId} />;
+}
+
+function RotationForm({ fieldId }: { fieldId?: string }) {
   const { data, error, isLoading, save } = useData();
-  const { demo } = useAuth();
+  const { demo, user } = useAuth();
   const field = data?.fields.find((f) => f.id === fieldId);
   const [step, setStep] = useState(1);
   const [goals, setGoals] = useState(["soil", "water"]);
@@ -28,50 +40,66 @@ export default function Rotation() {
   const [excluded, setExcluded] = useState<string[]>([]);
   const [horizon, setHorizon] = useState(3);
   const [irrigation, setIrrigation] = useState<boolean | null>(null);
+  const latestYear = new Date().getUTCFullYear() - 1;
+  const [year, setYear] = useState(() => (demo ? 2025 : latestYear));
+  const [dates, setDates] = useState(() => suggestedSeason(year, "other"));
   const [days, setDays] = useState(150);
+  const [currentPlan, setCurrentPlan] = useState("");
+  const [resultRevision, setResultRevision] = useState("");
+  const fingerprint = field ? JSON.stringify(field.boundary) : "";
+  const resultKey = JSON.stringify([
+    demo ? "demo" : user?.id,
+    fieldId,
+    fingerprint,
+  ]);
+  const activeStep = resultRevision === resultKey ? step : 1;
+  const selectedPeriod = selectClimatePeriod([], year, dates.start, dates.end);
   const [strategies, setStrategies] = useState<Scenario[]>([]);
+  const [sameSequences, setSameSequences] = useState(false);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<string[]>([]);
   const climate = useQuery({
-    queryKey: ["rotation-climate", fieldId, demo],
-    enabled: !!field,
+    queryKey: [...rotationClimateKey(demo ? "demo" : user?.id, field), year],
+    enabled:
+      !!field && Number.isInteger(year) && year >= 1984 && year <= latestYear,
     queryFn: async () => {
       if (demo) {
-        if (fieldId !== "demo-field-1") return [];
+        if (
+          year !== 2025 ||
+          fieldId !== initialDemo.fields[0].id ||
+          fingerprint !== JSON.stringify(initialDemo.fields[0].boundary)
+        )
+          return [];
         const response = await fetch("/demo-power-2025.json");
         if (!response.ok) throw new Error("Демо-наблюдения недоступны");
         return (await response.json()).observations as Observation[];
       }
-      if (!supabase) return [];
-      const { data: years } = await supabase
-        .from("field_analytics")
-        .select("analysis_period")
-        .eq("field_id", fieldId)
-        .eq("provider", "NASA POWER")
-        .eq("dataset", "daily-ag-v2")
-        .order("analysis_period", { ascending: false })
-        .limit(1);
-      if (years?.length) {
-        const { data: cached } = await supabase.functions.invoke("nasa-power", {
-          body: { fieldId, year: years[0].analysis_period, cacheOnly: true },
-        });
-        if (cached?.observations?.length)
-          return cached.observations as Observation[];
-      }
-      const { data: results, error } = await supabase
-        .from("analysis_results")
-        .select("result,source_metadata")
-        .eq("field_id", fieldId)
-        .like("analysis_type", "power-v1-%")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      if (!supabase || !field) return [];
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(fingerprint),
+      );
+      const revision = Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+      ).join("");
+      const { data: cached, error } = await supabase.functions.invoke(
+        "nasa-power",
+        {
+          body: { fieldId, year, cacheOnly: true },
+        },
+      );
       if (error) throw error;
-      return results?.source_metadata?.geometry ===
-        JSON.stringify(field?.boundary)
-        ? (results.result.observations as Observation[])
-        : [];
+      if (
+        matchesRotationGeometry(
+          cached?.metadata?.geometry,
+          fingerprint,
+          revision,
+        )
+      ) {
+        return (cached?.observations ?? []) as Observation[];
+      }
+      return [];
     },
   });
   if (isLoading) return <div className="page">Загрузка…</div>;
@@ -83,24 +111,74 @@ export default function Rotation() {
     irrigation ??
     (!!field.irrigation_type && field.irrigation_type !== "Без орошения");
   const history = data.seasons.filter((s) => s.field_id === fieldId);
+  const plans = data.scenarios.filter(
+    (plan) =>
+      plan.field_id === field.id &&
+      plan.crop_sequence.length === horizon &&
+      plan.crop_sequence.every((id) =>
+        data.crops.some((crop) => crop.id === id),
+      ),
+  );
   function generate() {
     try {
-      setStrategies(
-        generateRotations(
-          data!.crops,
-          history,
-          field!.id,
-          goals,
-          {
-            allowed: ids,
-            excluded,
-            horizon,
-            irrigation: water,
-            maxSeasonDays: days,
-          },
-          climate.data ?? [],
-        ),
+      const plan = plans.find((plan) => plan.id === currentPlan);
+      const constraints = {
+        allowed: ids,
+        excluded,
+        horizon,
+        irrigation: water,
+        maxSeasonDays: days,
+        soilType: field!.soil_type,
+        period: { year, ...dates },
+        currentSequence: plan?.crop_sequence,
+        currentName: plan?.name,
+      };
+      const diagnostics = import.meta.env.DEV
+        ? (details: RotationDiagnostics) => {
+            console.debug("[AGRONA rotation]", {
+              strategySource: "generateRotations",
+              fieldDataSource: demo ? "demo" : "supabase",
+              climateDataSource: climate.data?.length
+                ? demo
+                  ? "bundled-nasa-power"
+                  : "nasa-power-cache"
+                : climate.isError
+                  ? "unavailable"
+                  : "no-matching-cache",
+              historySeasons: history.length,
+              soilProvided:
+                !!constraints.soilType && constraints.soilType !== "Не знаю",
+              irrigationEnabled: water,
+              priorities: goals,
+              ...details,
+            });
+          }
+        : undefined;
+      const result = generateRotations(
+        data!.crops,
+        history,
+        field!.id,
+        goals,
+        constraints,
+        climate.data ?? [],
+        diagnostics,
       );
+      setSameSequences(
+        resultRevision === resultKey &&
+          strategies.length > 0 &&
+          JSON.stringify(strategies[0].priorities) !== JSON.stringify(goals) &&
+          JSON.stringify(
+            strategies.map((strategy) => [
+              strategy.name,
+              strategy.crop_sequence,
+            ]),
+          ) ===
+            JSON.stringify(
+              result.map((strategy) => [strategy.name, strategy.crop_sequence]),
+            ),
+      );
+      setStrategies(result);
+      setResultRevision(resultKey);
       setSaved([]);
       setStep(2);
       setMessage("");
@@ -121,12 +199,12 @@ export default function Rotation() {
             {field.name} · {Number(field.area_hectares).toFixed(1)} га
           </p>
         </div>
-        <span className="rule-badge">Прозрачная модель · v1.0</span>
+        <span className="rule-badge">Прозрачная модель · v2.0</span>
       </div>
       <div className="steps">
         {["Ваши цели", "Стратегии", "Сравнение"].map((name, i) => (
-          <div className={step >= i + 1 ? "active" : ""} key={name}>
-            <span>{step > i + 1 ? <Check size={14} /> : i + 1}</span>
+          <div className={activeStep >= i + 1 ? "active" : ""} key={name}>
+            <span>{activeStep > i + 1 ? <Check size={14} /> : i + 1}</span>
             {name}
           </div>
         ))}
@@ -134,7 +212,7 @@ export default function Rotation() {
       <p role="status" className="error">
         {message}
       </p>
-      {step === 1 ? (
+      {activeStep === 1 ? (
         <>
           <section className="card">
             <span className="eyebrow">ШАГ 01</span>
@@ -202,9 +280,9 @@ export default function Rotation() {
                   value={horizon}
                   onChange={(e) => setHorizon(Number(e.target.value))}
                 >
-                  {[2, 3, 4, 5].map((n) => (
+                  {[2, 3, 4, 5, 10, 15, 20].map((n) => (
                     <option key={n} value={n}>
-                      {n} года
+                      {n}
                     </option>
                   ))}
                 </select>
@@ -213,8 +291,8 @@ export default function Rotation() {
                 Длина доступного сезона, дней
                 <input
                   type="number"
-                  min={30}
-                  max={365}
+                  min={1}
+                  max={366}
                   value={days}
                   onChange={(e) => setDays(Number(e.target.value))}
                 />
@@ -228,6 +306,71 @@ export default function Rotation() {
                 Доступно орошение
               </label>
             </div>
+            <h3>Исторический сезон NASA POWER</h3>
+            <div className="form-grid">
+              <label>
+                Год наблюдений
+                <input
+                  type="number"
+                  min={1984}
+                  max={latestYear}
+                  value={year}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    setYear(next);
+                    setDates(suggestedSeason(next, "other"));
+                  }}
+                />
+              </label>
+              <label>
+                Начало периода
+                <input
+                  type="date"
+                  value={dates.start}
+                  onChange={(event) =>
+                    setDates({ ...dates, start: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Конец периода
+                <input
+                  type="date"
+                  value={dates.end}
+                  onChange={(event) =>
+                    setDates({ ...dates, end: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Текущий план для сравнения
+                <select
+                  value={
+                    plans.some((plan) => plan.id === currentPlan)
+                      ? currentPlan
+                      : ""
+                  }
+                  onChange={(event) => setCurrentPlan(event.target.value)}
+                >
+                  <option value="">Текущий план не указан</option>
+                  {plans
+                    .filter((plan) => plan.id)
+                    .map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </div>
+            <p className="caption">
+              Даты по умолчанию ориентировочные. Для отбора используется меньшая
+              из двух величин: указанная длина сезона и длина выбранного
+              периода.
+            </p>
+            {!selectedPeriod && (
+              <p className="error">Укажите даты в пределах выбранного года.</p>
+            )}
             <h3>Допустимые культуры</h3>
             <div className="crop-options">
               {data.crops.map((c) => (
@@ -269,14 +412,23 @@ export default function Rotation() {
             <p className="caption">
               {history.length} записей в истории.{" "}
               {climate.data?.length
-                ? "Загруженные наблюдения будут учтены."
-                : "Климатические наблюдения отсутствуют. Климатический рейтинг не будет подтверждён."}
+                ? "Доступен климатический кэш для этого поля и выбранного года. В расчёт войдут только дни выбранного периода."
+                : "Нет наблюдений для выбранного года и границы. Загрузить год можно во вкладке «Климат»; расчёт также доступен без климатических данных."}
             </p>
             {climate.error && (
               <p className="error">Не удалось загрузить историю климата.</p>
             )}
             <Button
-              disabled={climate.isLoading || days < 30 || days > 365}
+              disabled={
+                climate.isLoading ||
+                !selectedPeriod ||
+                !Number.isInteger(year) ||
+                year < 1984 ||
+                year > latestYear ||
+                !Number.isInteger(days) ||
+                days < 1 ||
+                days > 366
+              }
               onClick={generate}
             >
               Сформировать стратегии <ArrowRight size={16} />
@@ -288,8 +440,8 @@ export default function Rotation() {
           <div className="page-heading">
             <div>
               <h2>
-                {step === 2
-                  ? "Три пути к следующему сезону"
+                {activeStep === 2
+                  ? "Стратегии для следующего сезона"
                   : "Сравните условия, а не обещания"}
               </h2>
               <p>
@@ -301,6 +453,27 @@ export default function Rotation() {
               Изменить приоритеты
             </Button>
           </div>
+          {!!strategies.length && (
+            <p className="caption">
+              Веса сравнения: почва ×{rotationWeights(goals).soil}, вода ×
+              {rotationWeights(goals).water}, климат ×
+              {rotationWeights(goals).climate}.
+              {sameSequences &&
+                " После пересчёта последовательности остались прежними."}
+            </p>
+          )}
+          {!strategies.length && (
+            <p className="notice" role="status">
+              Ни одна культура не подходит под выбранный список и длину сезона.
+              Измените ограничения или выберите сохранённый план, чтобы сравнить
+              его с условиями.
+            </p>
+          )}
+          {strategies.length > 0 && strategies.length < 3 && (
+            <p className="notice" role="status">
+              {strategies[0].analysis_result.warnings[0]}
+            </p>
+          )}
           <div className="strategy-grid">
             {strategies.map((s, i) => (
               <article className="card strategy" key={s.name}>
@@ -308,10 +481,21 @@ export default function Rotation() {
                   {i === 0 ? "ТОЧКА ОТСЧЁТА" : `ВАРИАНТ 0${i}`}
                 </span>
                 <h2>{s.name}</h2>
+                <p>
+                  <strong>{s.analysis_result.score}</strong> балла за сезон по
+                  выбранным весам
+                </p>
+                {s.analysis_result.criteria && (
+                  <p className="caption">
+                    Почва и история {s.analysis_result.criteria.soil} · Вода{" "}
+                    {s.analysis_result.criteria.water} · Климат{" "}
+                    {s.analysis_result.criteria.climate ?? "нет данных"}
+                  </p>
+                )}
                 <div className="sequence">
                   {s.crop_sequence.map((id, y) => (
                     <div key={y}>
-                      <span>{new Date().getFullYear() + 1 + y}</span>
+                      <span>{Number(s.constraints.planYear) + y}</span>
                       <strong>
                         {data.crops.find((c) => c.id === id)?.name}
                       </strong>
@@ -319,15 +503,31 @@ export default function Rotation() {
                     </div>
                   ))}
                 </div>
-                {step === 3 && (
+                {(activeStep === 3 || strategies.length === 1) && (
                   <>
-                    <h3>Основания</h3>
+                    <h3>Преимущества и основания</h3>
                     <ul>
                       {s.analysis_result.reasons.map((r) => (
                         <li key={r}>{r}</li>
                       ))}
                     </ul>
-                    <h3>Неопределённость и проверка</h3>
+                    {!!s.analysis_result.risks?.length && (
+                      <>
+                        <h3>Риски и ограничения</h3>
+                        <ul className="warnings">
+                          {s.analysis_result.risks.map((r) => (
+                            <li key={r}>{r}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    <h3>Использованные данные</h3>
+                    <ul>
+                      {s.analysis_result.sources?.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                    <h3>Каких данных не хватает</h3>
                     <ul className="warnings">
                       {s.analysis_result.warnings.map((r) => (
                         <li key={r}>{r}</li>
@@ -336,11 +536,12 @@ export default function Rotation() {
                     <details>
                       <summary>Как рассчитан порядок</summary>
                       <p>
-                        Баллы: смена семейства +2, повтор −3; бобовые +3 при
-                        приоритете почвы, иначе +1; при экономии воды вычитается
-                        нижняя потребность / 100. При подтверждённом сухом
-                        периоде учитывается засухоустойчивость. Баллы —
-                        внутреннее правило, не прогноз эффективности.
+                        Справочные требования культур, повторы в истории и
+                        климатические сигналы оцениваются по отдельности.
+                        Выбранный приоритет удваивает вес критерия, а при поиске
+                        каждой альтернативы её акцент дополнительно усиливается.
+                        Общий балл на карточке рассчитан по одинаковым весам для
+                        всех планов.
                       </p>
                     </details>
                   </>
@@ -370,7 +571,7 @@ export default function Rotation() {
               </article>
             ))}
           </div>
-          {step === 2 && (
+          {activeStep === 2 && strategies.length > 1 && (
             <Button onClick={() => setStep(3)}>
               Перейти к сравнению <ArrowRight size={16} />
             </Button>
@@ -379,6 +580,12 @@ export default function Rotation() {
       )}
       <section className="saved-scenarios">
         <h2>Сохранённые сценарии</h2>
+        {data.scenarios.some((s) => s.field_id === field.id) && (
+          <p className="caption">
+            Это снимки прошлых расчётов. Для текущих приоритетов сформируйте
+            стратегии выше.
+          </p>
+        )}
         {data.scenarios
           .filter((s) => s.field_id === field.id)
           .map((s, i) => (

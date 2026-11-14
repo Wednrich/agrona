@@ -95,6 +95,11 @@ export default function MapPage() {
   const map = useRef<maplibregl.Map | null>(null);
   const draw = useRef<TerraDraw | null>(null);
   const drawingRef = useRef(false);
+  const creatingRef = useRef(false);
+  const editTarget = useRef<{
+    fieldId: string;
+    featureId: string | number;
+  } | null>(null);
   const farm = data?.farms.find((f) => f.id === farmId) ?? data?.farms[0];
   const fields = useMemo(
     () => data?.fields.filter((f) => f.farm_id === farm?.id) ?? [],
@@ -199,8 +204,10 @@ export default function MapPage() {
       d.start();
       draw.current = d;
       d.on("finish", (id) => {
+        if (!creatingRef.current) return;
         const feature = d.getSnapshot().find((f) => f.id === id);
         if (feature?.geometry.type === "Polygon") {
+          creatingRef.current = false;
           setForm({ boundary: feature.geometry });
           setDrawing(false);
           drawingRef.current = false;
@@ -339,6 +346,8 @@ export default function MapPage() {
       .filter((s) => s.field_id === field?.id)
       .sort((a, b) => b.year - a.year) ?? [];
   function clear() {
+    creatingRef.current = false;
+    editTarget.current = null;
     draw.current?.clear();
     draw.current?.setMode("static");
     drawingRef.current = false;
@@ -358,6 +367,7 @@ export default function MapPage() {
             value={farm?.id ?? ""}
             onChange={(e) => {
               setFarm(e.target.value);
+              clear();
               setSelected("");
             }}
           >
@@ -429,6 +439,7 @@ export default function MapPage() {
                 onClick={() => {
                   clear();
                   draw.current?.setMode("polygon");
+                  creatingRef.current = true;
                   setDrawing(true);
                   drawingRef.current = true;
                 }}
@@ -453,13 +464,21 @@ export default function MapPage() {
                 <Button
                   disabled={saving}
                   onClick={async () => {
-                    const geometry = draw.current
-                      ?.getSnapshot()
-                      .find((f) => f.geometry.type === "Polygon")?.geometry;
-                    if (!field || geometry?.type !== "Polygon") return;
+                    const target = editTarget.current;
+                    const geometry =
+                      target &&
+                      draw.current?.getSnapshotFeature(target.featureId)
+                        ?.geometry;
+                    if (!target || geometry?.type !== "Polygon") {
+                      setMapError("Редактируемая граница отсутствует.");
+                      return;
+                    }
                     setSaving(true);
                     try {
-                      await save("fields", { ...field, boundary: geometry });
+                      await save("fields", {
+                        id: target.fieldId,
+                        boundary: geometry,
+                      });
                       clear();
                     } catch (e) {
                       setMapError(String(e));
@@ -594,15 +613,27 @@ export default function MapPage() {
                 disabled={!ready || !selectedBounds}
                 onClick={() => {
                   clear();
-                  draw.current?.addFeatures([
+                  const editor = draw.current;
+                  if (!editor) return;
+                  const [added] = editor.addFeatures([
                     {
                       type: "Feature",
-                      id: field.id,
                       geometry: field.boundary,
                       properties: { mode: "polygon" },
                     },
                   ]);
-                  draw.current?.setMode("select");
+                  if (!added?.valid || added.id == null) {
+                    setMapError(
+                      "Не удалось подготовить границу к редактированию.",
+                    );
+                    return;
+                  }
+                  editTarget.current = {
+                    fieldId: field.id,
+                    featureId: added.id,
+                  };
+                  editor.setMode("select");
+                  editor.selectFeature(added.id);
                   drawingRef.current = true;
                   setEditing(true);
                 }}

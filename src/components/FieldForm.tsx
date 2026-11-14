@@ -2,8 +2,13 @@ import { useState } from "react";
 import type { Field } from "../lib/types";
 import { useData } from "../lib/data";
 import SoilPicker from "./SoilPicker";
+import FieldBoundaryEditor from "./FieldBoundaryEditor";
+import { previewBoundary } from "../lib/field-boundary";
 import { restoreSoil, soilForSave, customSoilError } from "../lib/soil";
 import { Button } from "./ui/button";
+
+const irrigationOptions = ["Без орошения", "Дождевание", "Капельное", "Другое"];
+
 export default function FieldForm({
   farmId,
   field,
@@ -16,26 +21,41 @@ export default function FieldForm({
   onClose: () => void;
 }) {
   const { save } = useData();
+  const [initial] = useState(() => {
+    const polygon = field?.boundary ?? boundary;
+    if (!polygon) return {};
+    try {
+      return { preview: previewBoundary(polygon) };
+    } catch (cause) {
+      return { error: cause instanceof Error ? cause.message : String(cause) };
+    }
+  });
+  const [geometry, setGeometry] = useState(initial.preview?.geometry);
   const [error, setError] = useState("");
   const [soil, setSoil] = useState(() => restoreSoil(field?.soil_type));
   const [soilError, setSoilError] = useState("");
   const [busy, setBusy] = useState(false);
+  const initialIrrigation = field?.irrigation_type || irrigationOptions[0];
   return (
     <div className="modal-backdrop">
       <section
-        className="card modal"
+        className="card modal wide field-form"
         role="dialog"
         aria-modal="true"
         aria-label="Поле"
       >
         <h2>{field ? "Редактировать поле" : "Новое поле"}</h2>
-        <p>Задайте границу на карте или введите координаты: долгота, широта.</p>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            if (busy) return;
+            if (busy || !geometry) return;
+            const initialSoil = restoreSoil(field?.soil_type);
+            const soilChanged =
+              !field ||
+              soil.choice !== initialSoil.choice ||
+              soil.custom.trim() !== initialSoil.custom.trim();
             const soilType = soilForSave(soil.choice, soil.custom);
-            if (soilType === null) {
+            if (soilChanged && soilType === null) {
               setSoilError(customSoilError);
               return;
             }
@@ -43,13 +63,15 @@ export default function FieldForm({
             setBusy(true);
             const f = new FormData(e.currentTarget);
             try {
-              const geometry = JSON.parse(String(f.get("boundary")));
+              const name = String(f.get("name")).trim();
+              const irrigation = f.get("irrigation_type");
               await save("fields", {
-                ...(field ? { id: field.id } : {}),
-                farm_id: farmId,
-                name: String(f.get("name")).trim(),
-                soil_type: soilType,
-                irrigation_type: f.get("irrigation_type"),
+                ...(field ? { id: field.id } : { farm_id: farmId }),
+                ...(!field || name !== field.name.trim() ? { name } : {}),
+                ...(soilChanged ? { soil_type: soilType } : {}),
+                ...(!field || irrigation !== initialIrrigation
+                  ? { irrigation_type: irrigation }
+                  : {}),
                 boundary: geometry,
               });
               onClose();
@@ -80,14 +102,13 @@ export default function FieldForm({
             />
             <label>
               Орошение
-              <select
-                name="irrigation_type"
-                defaultValue={field?.irrigation_type ?? "Без орошения"}
-              >
-                <option>Без орошения</option>
-                <option>Дождевание</option>
-                <option>Капельное</option>
-                <option>Другое</option>
+              <select name="irrigation_type" defaultValue={initialIrrigation}>
+                {!irrigationOptions.includes(initialIrrigation) && (
+                  <option>{initialIrrigation}</option>
+                )}
+                {irrigationOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
               </select>
             </label>
           </div>
@@ -113,22 +134,16 @@ export default function FieldForm({
               )}
             </label>
           )}
-          <label>
-            Граница GeoJSON
-            <textarea
-              name="boundary"
-              required
-              defaultValue={JSON.stringify(
-                field?.boundary ??
-                  boundary ?? { type: "Polygon", coordinates: [] },
-              )}
-            />
-          </label>
+          <FieldBoundaryEditor
+            initial={initial.preview}
+            initialError={initial.error}
+            onChange={setGeometry}
+          />
           <p className="error" role="alert">
             {error}
           </p>
           <div className="row">
-            <Button disabled={busy}>
+            <Button disabled={busy || !geometry}>
               {busy ? "Сохраняем…" : "Сохранить поле"}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
