@@ -1,3 +1,9 @@
+import {
+  vegetationInsights,
+  type VegetationSample,
+} from "../features/field-insights";
+import type { RotationPeriod } from "../features/rotation-climate";
+import { FieldInsights } from "./FieldInsights";
 import { useQuery } from "@tanstack/react-query";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { Leaf } from "lucide-react";
@@ -13,18 +19,11 @@ import {
 import { supabase } from "../lib/supabase";
 import type { Field } from "../lib/types";
 const earliestHlsYear = 2013;
-type HlsDay = {
-  date: string;
+type HlsDay = VegetationSample & {
   acquiredAt: string;
-  conceptId: string;
-  dataset: "HLSL30" | "HLSS30";
   min: number | null;
   max: number | null;
-  mean: number | null;
-  validPixels: number;
-  fieldPixels: number;
   waterPixels: number;
-  tileContainsField: boolean;
 };
 import { Button } from "./ui/button";
 
@@ -42,11 +41,13 @@ export default function HlsVegetationAnalytics({
   year,
   ownerId,
   demo,
+  insightPeriod,
 }: {
   field: Field;
   year: number;
   ownerId?: string;
   demo: boolean;
+  insightPeriod?: RotationPeriod;
 }) {
   const query = useQuery<VegetationResponse>({
     queryKey: ["hls-vegetation", ownerId, field.id, field.boundary, year],
@@ -91,6 +92,16 @@ export default function HlsVegetationAnalytics({
   const warning = query.error?.message ?? query.data?.warning;
   return (
     <div className="stack" style={{ display: "grid", gap: 16 }}>
+      {!demo &&
+        year >= earliestHlsYear &&
+        insightPeriod &&
+        !query.data?.pending &&
+        (!query.isFetching || rows.length > 0) && (
+          <FieldInsights
+            title="Заключение по растительности"
+            insights={vegetationInsights(rows, insightPeriod)}
+          />
+        )}
       <div className="data-note">
         <Leaf size={18} />
         <div>

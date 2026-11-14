@@ -1,3 +1,4 @@
+import { Brand } from "../components/Brand";
 import {
   CountryPicker,
   LocationPicker,
@@ -6,7 +7,7 @@ import {
 } from "../components/RegistrationLocations";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { Button } from "../components/ui/button";
@@ -99,9 +100,7 @@ export default function Auth() {
   if (user && mode !== "password") return <Navigate to="/map" replace />;
   return (
     <main className="auth-page">
-      <Link to="/" className="brand">
-        ◈ FIELD SHIFT
-      </Link>
+      <Brand />
       <section className="card auth-card">
         <span className="eyebrow">ВАШЕ ХОЗЯЙСТВО. НОВЫЕ ВОЗМОЖНОСТИ.</span>
         <h1>

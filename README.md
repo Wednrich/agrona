@@ -1,4 +1,4 @@
-# Field Shift
+# AGRONA
 
 Russian-language agricultural decision support. React + TypeScript + Vite frontend; Supabase Auth/PostgreSQL/PostGIS backend. No privileged key is used in the browser.
 

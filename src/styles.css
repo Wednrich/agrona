@@ -3,8 +3,12 @@
 @tailwind utilities;
 :root {
   font-family: Inter, Arial, sans-serif;
+  --agrona-dark: #10341e;
+  --agrona-green: #36752d;
+  --agrona-gold: #edbd4f;
+  --agrona-white: #fff;
   color: #17241d;
-  background: #f5f7f6;
+  background: var(--agrona-white);
   font-synthesis: none;
 }
 * {
@@ -91,11 +95,11 @@ button:disabled {
   transition: 0.15s;
 }
 .primary {
-  background: #62d68b;
-  color: #09261a;
+  background: var(--agrona-green);
+  color: var(--agrona-white);
 }
 .primary:hover {
-  background: #b9ef65;
+  background: var(--agrona-dark);
 }
 .outline {
   background: white;
@@ -112,7 +116,7 @@ button:disabled {
 }
 .auth-page {
   min-height: 100vh;
-  background: #071c17;
+  background: var(--agrona-dark);
   color: white;
   padding: 35px;
   display: flex;
@@ -130,9 +134,29 @@ button:disabled {
   margin-top: 10px;
 }
 .brand {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
+  display: inline-flex;
+  width: 116px;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+.brand img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.landing .brand img,
+.auth-page > .brand img,
+.sidebar .brand img {
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+}
+.auth-page > .brand {
+  width: 150px;
+}
+.topbar .brand {
+  width: 82px;
+}
+.topbar-heading {
+  min-width: 0;
 }
 .eyebrow {
   font-size: 10px;
@@ -160,7 +184,7 @@ button:disabled {
   min-height: 100vh;
 }
 .sidebar {
-  background: #0c241d;
+  background: var(--agrona-dark);
   color: #f8faf9;
   width: 240px;
   position: fixed;
@@ -171,14 +195,7 @@ button:disabled {
   z-index: 20;
 }
 .sidebar .brand {
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  white-space: nowrap;
-}
-.sidebar .brand svg {
-  color: #b9ef65;
+  width: 126px;
 }
 .sidebar > .eyebrow {
   font-size: 6px;
@@ -201,7 +218,7 @@ button:disabled {
 }
 .sidebar nav a.active {
   background: #214b36;
-  color: #b9ef65;
+  color: var(--agrona-gold);
 }
 .sidebar-bottom {
   margin-top: auto;
@@ -223,7 +240,7 @@ button:disabled {
 .satellite-badge {
   font-size: 10px;
   letter-spacing: 1px;
-  color: #b9ef65;
+  color: var(--agrona-gold);
 }
 .workspace {
   margin-left: 240px;
@@ -269,12 +286,10 @@ button:disabled {
     padding: 25px 10px;
   }
   .sidebar .brand {
-    font-size: 0;
-    justify-content: center;
+    width: 50px;
   }
-  .sidebar .brand svg {
-    width: 28px;
-    height: 28px;
+  .topbar .brand {
+    width: 60px;
   }
   .sidebar > .eyebrow,
   .sidebar-bottom {
@@ -1046,7 +1061,7 @@ td a {
   font-size: 13px;
 }
 .landing {
-  background: #071c17;
+  background: var(--agrona-dark);
   color: #f8faf9;
 }
 .landing-nav {
@@ -1057,15 +1072,6 @@ td a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.landing .brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 19px;
-}
-.landing .brand svg {
-  color: #b9ef65;
 }
 .landing-nav > div {
   display: flex;
@@ -1106,7 +1112,7 @@ td a {
 }
 .hero h1 em {
   font-style: normal;
-  color: #b9ef65;
+  color: var(--agrona-gold);
 }
 .hero-copy > p {
   font-size: 14px;
@@ -1298,7 +1304,7 @@ td a {
   gap: 20px;
   outline: 1px solid #263e29;
   outline-offset: 25px;
-  color: #b9ef65;
+  color: var(--agrona-gold);
 }
 .orbit-mark > span {
   font-size: 30px;
@@ -1332,8 +1338,7 @@ td a {
   color: #809987;
 }
 .landing footer .brand {
-  color: #e3ece5;
-  font-size: 14px;
+  width: 96px;
 }
 @media (max-width: 1000px) {
   .hero {
@@ -1367,6 +1372,9 @@ td a {
 @media (max-width: 700px) {
   .landing-nav {
     height: 80px;
+  }
+  .landing-nav .brand {
+    width: 96px;
   }
   .landing-nav > div a:not(:last-child) {
     display: none;
@@ -1617,5 +1625,26 @@ td a {
   }
   .field-coordinate-table input {
     padding: 6px 3px;
+  }
+}
+
+.field-insights {
+  margin-block: 16px;
+}
+.field-insight {
+  border-top: 1px solid #dce4df;
+  padding-block: 12px;
+}
+.field-insight h3,
+.field-insight p {
+  margin-block: 0 6px;
+}
+.field-insight summary {
+  cursor: pointer;
+}
+
+@media (max-width: 540px) {
+  .topbar-heading > span {
+    display: none;
   }
 }

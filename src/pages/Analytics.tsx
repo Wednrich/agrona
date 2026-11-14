@@ -1,3 +1,10 @@
+import { TerrainAnalytics } from "../components/TerrainAnalytics";
+import { FieldInsights } from "../components/FieldInsights";
+import {
+  climateInsights,
+  fieldContextInsights,
+} from "../features/field-insights";
+import { initialDemo } from "../lib/demo";
 import VegetationAnalytics from "../components/VegetationAnalytics";
 import { FieldPicker } from "../components/FieldPicker";
 import { useState } from "react";
@@ -118,12 +125,22 @@ export default function Analytics() {
   const yearEnd = `${year}-12-31`;
   const start = climateMode === "year" ? yearStart : dates.start;
   const end = climateMode === "year" ? yearEnd : dates.end;
-  const climate =
-    tab === "Климат" ? selectClimatePeriod(rows, year, start, end) : null;
+  const climate = selectClimatePeriod(
+    tab === "Климат" ? rows : [],
+    year,
+    start,
+    end,
+  );
   const climateRows = climate?.daily ?? [];
   const climateStats = climateSummary(climateRows);
   const climateGdd = powerMetrics(climateRows, climate?.days ?? 0).gdd5;
   const fmt = (n: number | null) => (n === null ? "—" : n.toFixed(1));
+  const insightPeriod = { year, start, end };
+  const matchesDemoBoundary =
+    !demo ||
+    (field.id === initialDemo.fields[0].id &&
+      JSON.stringify(field.boundary) ===
+        JSON.stringify(initialDemo.fields[0].boundary));
   const seasons = farms?.seasons.filter((s) => s.field_id === field.id) ?? [];
   return (
     <main className="page analytics">
@@ -254,7 +271,7 @@ export default function Analytics() {
           )}
         </>
       )}
-      {tab === "Климат" && (
+      {(tab === "Климат" || tab === "Растительность") && (
         <section className="card">
           <div className="row">
             <label>
@@ -328,19 +345,20 @@ export default function Analytics() {
                 <strong>
                   {start} — {end}
                 </strong>
-                . Исторические данные NASA POWER.
+                . {tab === "Климат" && "Исторические данные NASA POWER."}
               </p>
-              {(rows.length > 0 ||
-                (query.data &&
-                  !query.isFetching &&
-                  !query.data.pending &&
-                  !query.data.warning)) && (
-                <p role="status">
-                  Доступно дней: {climate.available} из {climate.days}.
-                  {climate.absent + climate.partial > 0 &&
-                    ` Пропуски: ${climate.absent} дней без записей, ${climate.partial} дней с неполным набором показателей. Расчёты используют доступные значения.`}
-                </p>
-              )}
+              {tab === "Климат" &&
+                (rows.length > 0 ||
+                  (query.data &&
+                    !query.isFetching &&
+                    !query.data.pending &&
+                    !query.data.warning)) && (
+                  <p role="status">
+                    Доступно дней: {climate.available} из {climate.days}.
+                    {climate.absent + climate.partial > 0 &&
+                      ` Пропуски: ${climate.absent} дней без записей, ${climate.partial} дней с неполным набором показателей. Расчёты используют доступные значения.`}
+                  </p>
+                )}
             </>
           ) : (
             <p role="alert" className="notice">
@@ -349,6 +367,26 @@ export default function Analytics() {
             </p>
           )}
         </section>
+      )}
+      {tab === "Климат" && climate && (
+        <FieldInsights
+          title="Заключения по полю"
+          insights={[
+            ...((query.isFetching || query.data?.pending) && !rows.length
+              ? []
+              : climateInsights(
+                  matchesDemoBoundary ? rows : [],
+                  insightPeriod,
+                )),
+            ...fieldContextInsights(
+              field,
+              seasons,
+              farms?.crops ?? [],
+              insightPeriod,
+              demo,
+            ),
+          ]}
+        />
       )}
       {tab === "Климат" && climate && climate.available > 0 && (
         <>
@@ -613,6 +651,7 @@ export default function Analytics() {
           year={year}
           ownerId={user?.id}
           demo={demo}
+          insightPeriod={insightPeriod}
         />
       )}
       {tab === "Почва" && (
@@ -629,6 +668,9 @@ export default function Analytics() {
             Дополнить сведения →
           </Link>
         </section>
+      )}
+      {tab === "Почва" && (
+        <TerrainAnalytics field={field} ownerId={user?.id} demo={demo} />
       )}
       {tab === "Риски" && rows.length > 0 && (
         <div className="chart-grid">

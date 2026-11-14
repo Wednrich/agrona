@@ -1,3 +1,4 @@
+import { Brand } from "./Brand";
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import {
   Map,
@@ -6,7 +7,6 @@ import {
   RefreshCw,
   Settings,
   LogOut,
-  Sprout,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { t } from "../lib/i18n";
@@ -16,9 +16,7 @@ export default function Shell() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link className="brand" to="/">
-          <Sprout /> FIELD SHIFT
-        </Link>
+        <Brand />
         <span className="eyebrow">ПЛАНИРУЙТЕ. ВЫРАЩИВАЙТЕ. АДАПТИРУЙТЕСЬ.</span>
         <nav>
           {[
@@ -59,9 +57,13 @@ export default function Shell() {
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <span>
-            Моё хозяйство <span className="muted"> / Рабочее пространство</span>
-          </span>
+          <div className="row topbar-heading">
+            <Brand className="topbar-brand" />
+            <span>
+              Моё хозяйство{" "}
+              <span className="muted"> / Рабочее пространство</span>
+            </span>
+          </div>
           <div className="row">
             {demo && <span className="demo-badge">Демо · пример данных</span>}
             <Link to="/settings" className="avatar" aria-label="Профиль">

@@ -1,7 +1,7 @@
+import { Brand } from "../components/Brand";
 import { workspaceAccess } from "../lib/workspace-access";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Sprout,
   ArrowUpRight,
   Satellite,
   Map,
@@ -23,9 +23,7 @@ export default function Landing() {
   return (
     <main className="landing">
       <nav className="landing-nav">
-        <Link to="/" className="brand">
-          <Sprout /> FIELD SHIFT
-        </Link>
+        <Brand />
         <div>
           <a href="#approach">Возможности</a>
           <a href="#data">Данные NASA</a>
@@ -76,7 +74,7 @@ export default function Landing() {
           />
           <div className="image-shade" />
           <div className="visual-top">
-            <span>FIELD SHIFT / EARTH OBSERVATION</span>
+            <span>AGRONA / EARTH OBSERVATION</span>
             <span>↗</span>
           </div>
           <div className="visual-caption">
@@ -160,9 +158,9 @@ export default function Landing() {
             чем кажется.
           </h2>
           <p>
-            NASA POWER предоставляет многолетние наблюдения за климатом. Field
-            Shift помогает исследовать их для выбранного участка — с
-            источниками, периодами и объяснениями.
+            NASA POWER предоставляет многолетние наблюдения за климатом. AGRONA
+            помогает исследовать их для выбранного участка — с источниками,
+            периодами и объяснениями.
           </p>
           <p className="caption">
             Климатическая сетка не заменяет измерения почвы на поле. Проект для
@@ -186,9 +184,7 @@ export default function Landing() {
         </Button>
       </section>
       <footer>
-        <Link className="brand" to="/">
-          <Sprout /> FIELD SHIFT
-        </Link>
+        <Brand />
         <span>Adapting Farms with NASA Data</span>
         <a
           href="https://unsplash.com/photos/aerial-view-of-green-and-brown-agricultural-fields-81HghedjWk8"

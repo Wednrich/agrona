@@ -21,7 +21,12 @@ export default function VegetationAnalytics(
       {source === "hls" ? (
         <HlsVegetationAnalytics {...props} />
       ) : (
-        <SentinelVegetationAnalytics {...props} />
+        <SentinelVegetationAnalytics
+          field={props.field}
+          year={props.year}
+          ownerId={props.ownerId}
+          demo={props.demo}
+        />
       )}
     </>
   );
