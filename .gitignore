@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+__pycache__/
+
+# Private NASA HLS worker credentials
+workers/hls/.env
+
+# Local Supabase CLI state
+supabase/.temp/
+supabase/.branches/
+
+workers/hls/worker.py.backup
