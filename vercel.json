@@ -4,7 +4,8 @@
   "functions": {
     "api/*.py": {
       "maxDuration": 180,
-      "excludeFiles": "{tests/**,public/**,dist/**,data/prepared/**,docs/**,supabase/**,workers/hls/test_*.py,**/__pycache__/**}"
+      "includeFiles": "{scripts/field_data/**/*.py,workers/hls/worker.py}",
+      "excludeFiles": "{tests/**,public/**,dist/**,data/prepared/**,docs/**,supabase/**,workers/hls/test_*.py}"
     }
   },
   "rewrites": [
