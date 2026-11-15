@@ -1,6 +1,7 @@
 requests>=2.32,<3
 numpy>=2,<3
-rasterio>=1.4,<2
+# Rasterio 1.5.2 adds about 57 MB to the Linux x86-64 Vercel bundle.
+rasterio==1.4.3
 shapely>=2,<3
 h5py>=3.12,<4
 fsspec[http]>=2025,<2027
