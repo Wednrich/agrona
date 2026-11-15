@@ -1,7 +1,9 @@
 requests>=2.32,<3
 numpy>=2,<3
-# Rasterio 1.5.2 adds about 57 MB to the Linux x86-64 Vercel bundle.
-rasterio==1.4.3
+# Vercel's frontend installer can use 3.14 while Python functions use 3.12.
+# Rasterio 1.4.4 provides a prebuilt wheel for CPython 3.14.
+rasterio==1.4.3; python_version < "3.14"
+rasterio==1.4.4; python_version >= "3.14"
 shapely>=2,<3
 h5py>=3.12,<4
 fsspec[http]>=2025,<2027
