@@ -143,7 +143,11 @@ HLSL30 uses B04 and B05 and starts in 2013. HLSS30 uses B04 and B8A and starts i
    npx supabase functions deploy hls-vegetation --project-ref mcxzkbgnfqjbrlglfzki
    ```
 
-4. Run a single persistent worker on a trusted container host. Provide `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `EARTHDATA_TOKEN` through the worker host's secret store. For a local smoke test only, use a private env file outside the repository. The Edge Function only queues and reads jobs. The Earthdata token is held by the worker that opens the rasters. The worker's service role can write the queue and cache and must remain private.
+4. Run the worker where it can hold a Supabase lease. The Edge Function only queues and reads jobs; the worker that opens the rasters owns `EARTHDATA_TOKEN`, and its service role key can write the queue and cache, so both must stay private. Three hosts are supported.
+
+   **GitHub Actions (free, periodic).** `.github/workflows/hls-worker.yml` claims at most one job per run, checkpoints it, and exits, so the next run resumes from the stored `conceptId`/`revisionId` pairs instead of re-reading finished granules. Create the repository secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `EARTHDATA_TOKEN` under **Settings → Secrets and variables → Actions**. Run **Actions → HLS worker → Run workflow** with a `field_id` and `year` first, then create the repository variable `HLS_AUTOMATION_ENABLED=true` to arm the `*/30` schedule. An idle queue skips the image build, and every run reports queue and analytics counts in its job summary. Actions is a periodic processor, not an always-on service: runs are queued, capped at 25 minutes, and hold no lease between runners.
+
+   **Local Docker (smoke test or one-off).** The worker reads `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `EARTHDATA_TOKEN` directly or from the `*_FILE` variables, so a secrets directory works too.
 
    ```sh
    docker build -t agrona-hls workers/hls
@@ -152,5 +156,7 @@ HLSL30 uses B04 and B05 and starts in 2013. HLSS30 uses B04 and B8A and starts i
    docker run -d --name agrona-hls --restart unless-stopped \
      --env-file /absolute/path/to/private-hls.env agrona-hls
    ```
+
+   **Persistent container host.** `workers/hls/compose.yaml` runs the same image with `restart: unless-stopped`, a read-only root filesystem, a non-root user, dropped capabilities and file-based secrets.
 
 The smoke test reads actual pixels for one saved field without writing. Then open Vegetation for that field and year and verify that the job completes, the results persist on reload, saving a new field queues analysis, and editing the boundary selects a new cache revision. Run with the Copernicus credentials omitted to verify HLS independence. The worker uses one active job per process, window-size limits, incremental checkpoints and backoff for transient HTTP errors. NASA requests can be throttled or denied. Inspect the worker logs and `earth_observation_jobs` if the tab remains queued or shows partial results.
