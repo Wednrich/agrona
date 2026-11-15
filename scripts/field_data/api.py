@@ -1,16 +1,13 @@
-"""WSGI entrypoint for the Vercel `field_data` service.
+"""WSGI entrypoint for the legacy SoilGrids route.
 
 Serves the same contract as the Vite dev middleware in scripts/soil-server.mjs:
 POST /api/soil with a GeoJSON Polygon body returns a SoilGrids estimate.
 """
 import json
-import os
-import sys
-
-# The service root is this directory, so sibling modules are imported top-level.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from soil_request import estimate  # noqa: E402
+if __package__:
+    from .soil_request import estimate
+else:  # Standalone field_data service.
+    from soil_request import estimate
 
 MAX_BODY = 64000
 ROUTES = {"/api/soil", "/api/soil/"}

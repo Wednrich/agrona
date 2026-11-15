@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Field } from "../lib/types";
+import { loadFieldSource } from "../features/live-field-data";
 
 type Estimate = {
   status: string;
@@ -35,17 +36,18 @@ export function loadSoil(boundary: Field["boundary"]): Promise<Estimate> {
   if (pending.has(key)) return pending.get(key)!;
   const cached = cachedSoil(boundary);
   if (cached) return Promise.resolve(cached);
-  const request = fetch(import.meta.env.VITE_SOIL_URL || "/api/soil", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: key,
-  })
-    .then(async (response) => {
-      if (!response.ok)
-        throw new Error(
-          "Не удалось загрузить оценку почвы. Поле можно сохранить.",
-        );
-      const result = (await response.json()) as Estimate;
+  const request = loadFieldSource(
+    "soilgrids",
+    boundary,
+    undefined,
+    undefined,
+    undefined,
+    import.meta.env.VITE_SOIL_URL,
+  )
+    .then((response) => {
+      if (response.status === "blocked")
+        throw new Error("SoilGrids сейчас недоступен. Поле можно сохранить.");
+      const result = response as Estimate;
       if (!["ready", "no_coverage"].includes(result.status))
         throw new Error("Источник вернул непригодные данные.");
       if (
@@ -60,10 +62,7 @@ export function loadSoil(boundary: Field["boundary"]): Promise<Estimate> {
       }
       return result;
     })
-    .catch((error) => {
-      pending.delete(key);
-      throw error;
-    });
+    .finally(() => pending.delete(key));
   pending.set(key, request);
   return request;
 }

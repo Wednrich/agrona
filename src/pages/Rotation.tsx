@@ -21,13 +21,11 @@ import {
 import { summarizeRotationClimate } from "../features/rotation-climate";
 import { loadRotationPower } from "../features/rotation-power";
 import { selectClimatePeriod, suggestedSeason } from "../features/climate";
-import { initialDemo } from "../lib/demo";
+import { loadDemoPower } from "../features/demo-power";
 import { FieldPicker } from "../components/FieldPicker";
-import type { Scenario, Observation } from "../lib/types";
+import type { Scenario } from "../lib/types";
 import { Button } from "../components/ui/button";
 import SoilEstimate, { cachedSoil } from "../components/SoilEstimate";
-import { centroid } from "@turf/turf";
-import { fetchPower } from "../../supabase/functions/_shared/power-provider";
 export default function Rotation() {
   const { fieldId } = useParams();
   const [params] = useSearchParams();
@@ -112,22 +110,7 @@ function RotationForm({
     retry: false,
     staleTime: 300000,
     queryFn: async ({ signal }) => {
-      if (demo) {
-        if (
-          year !== 2025 ||
-          fieldId !== initialDemo.fields[0].id ||
-          fingerprint !== JSON.stringify(initialDemo.fields[0].boundary)
-        ) {
-          if (!field) return [];
-          const [longitude, latitude] = centroid(field.boundary).geometry
-            .coordinates;
-          return (await fetchPower(year, longitude, latitude))
-            .observations as Observation[];
-        }
-        const response = await fetch("/demo-power-2025.json");
-        if (!response.ok) throw new Error("Демо-наблюдения недоступны");
-        return (await response.json()).observations as Observation[];
-      }
+      if (demo && field) return (await loadDemoPower(field, year)).observations;
       if (!supabase || !field) return [];
       return loadRotationPower(
         supabase.functions.invoke.bind(supabase.functions),

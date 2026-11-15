@@ -1,19 +1,50 @@
+import json
 import unittest
 from datetime import date
 from io import BytesIO
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import h5py
 from rasterio.transform import from_origin
 from shapely.geometry import Point, box
 
-from scripts.field_data.__main__ import prepare, validate_geometry
+from api.soil import app as legacy_soil_api
+from scripts.field_data.__main__ import prepare
 from scripts.field_data.earthdata import official_asset, sinusoidal_index
+from scripts.field_data.geometry import validate_geometry
 from scripts.field_data.gesdisc import read_cell
+from scripts.field_data.live import fetch_source, validate_request
 from scripts.field_data.public import NoCoverage, daily_power, polygon_weights
 
 
 class TestFieldSources(unittest.TestCase):
+    def test_legacy_soil_route_accepts_the_original_polygon_body(self):
+        polygon = box(76.697, 43.245, 76.705, 43.251).__geo_interface__
+        payload = json.dumps(polygon).encode()
+        start_response = Mock()
+        with patch("scripts.field_data.soil_request.soilgrids", return_value={"data": []}) as source:
+            body = legacy_soil_api({
+                "PATH_INFO": "/api/soil", "REQUEST_METHOD": "POST",
+                "CONTENT_LENGTH": str(len(payload)), "wsgi.input": BytesIO(payload),
+            }, start_response)
+        self.assertEqual(start_response.call_args.args[0], "200 OK")
+        self.assertEqual(json.loads(b"".join(body))["status"], "ready")
+        self.assertEqual(source.call_args.args[0].__geo_interface__, polygon)
+
+    def test_live_source_uses_submitted_geometry_and_dates(self):
+        polygon = box(76.697, 43.245, 76.705, 43.251)
+        payload = {"source": "imerg-power", "boundary": polygon.__geo_interface__,
+                   "start": "2025-05-03", "end": "2025-05-07"}
+        with patch("scripts.field_data.live.prepare") as prepare_source:
+            prepare_source.return_value = {"imerg-power": {"status": "ready", "data": [{"IMERG_PRECTOT": 0}]}}
+            result = fetch_source(*validate_request(payload))
+        source_geometry, start, end, names, pilot = prepare_source.call_args.args
+        self.assertTrue(source_geometry.equals(polygon))
+        self.assertEqual((start, end, names, pilot), (date(2025, 5, 3), date(2025, 5, 7), ["imerg-power"], None))
+        self.assertEqual(result["data"], [{"IMERG_PRECTOT": 0}])
+        with self.assertRaises(ValueError):
+            validate_request({**payload, "source": "cocorahs"})
+
     def test_geometry_intersection_keeps_fractional_cells(self):
         polygon = box(0.75, 0.25, 1.25, 0.75)
         weights, area = polygon_weights(

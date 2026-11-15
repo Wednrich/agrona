@@ -168,13 +168,24 @@ def smap(geometry, start, end):
     index = (floor((7314540.83 - y[0]) / 9008.05), floor((x[0] + 17367530.44) / 9008.05))
     if not (0 <= index[0] < 1624 and 0 <= index[1] < 3856):
         raise NoCoverage("Centroid is outside the SMAP global 9 km grid")
-    scenes = search_granules("SPL3SMP_E", "006", geometry, start, end, limit=8)
+    scenes = search_granules("SPL3SMP_E", "006", geometry, start, end, limit=3)
     rows = []
+    token_value = token() if scenes else None
     for scene in scenes:
         url = choose_asset(scene, ".h5")
+        # Resolve the archive redirect once per granule. HDF5 makes many small
+        # range reads, and each redirect otherwise repeats the archive handshake.
+        headers = {"Authorization": f"Bearer {token_value}"}
+        with requests.get(url, headers={**headers, "Range": "bytes=0-0"},
+                          stream=True, timeout=(8, 15)) as response:
+            if response.status_code != 206:
+                raise SourceError(f"SMAP archive did not provide a byte range (HTTP {response.status_code})")
+            remote_url = response.url
+        if urlsplit(remote_url).netloc != urlsplit(url).netloc:
+            headers = {}
         with fsspec.open(
-            url, "rb", headers={"Authorization": f"Bearer {token()}"},
-            client_kwargs={"timeout": ClientTimeout(total=25, sock_connect=8, sock_read=15)},
+            remote_url, "rb", headers=headers,
+            client_kwargs={"timeout": ClientTimeout(total=12, sock_connect=5, sock_read=8)},
             block_size=256 * 1024, cache_type="blockcache", cache_options={"maxblocks": 12},
         ) as remote, h5py.File(remote, "r") as file:
             group = file["Soil_Moisture_Retrieval_Data_AM"]
@@ -189,15 +200,13 @@ def smap(geometry, start, end):
                 "value": value if usable else None, "qa": qa, "surfaceFlag": flag,
                 "gridRow": index[0], "gridColumn": index[1],
             })
-        if sum(row["value"] is not None for row in rows) >= 3:
-            break
     usable = any(row["value"] is not None for row in rows)
     return {
         "status": "ready" if usable else "no_coverage",
-        **({} if usable else {"reason": "No recommended-quality SMAP morning data in up to eight inspected days"}),
+        **({} if usable else {"reason": "No recommended-quality SMAP morning data in up to three inspected days"}),
         "dataset": "NASA SMAP SPL3SMP_E.006", "resolutionMetres": 9000, "units": "m³/m³",
         "method": "Regional surface moisture, morning pass, QA bits 0–1 clear",
-        "scope": "At most eight days inspected, stops after three usable values",
+        "scope": "At most three morning granules inspected at the start of the requested period",
         "data": rows,
     }
 

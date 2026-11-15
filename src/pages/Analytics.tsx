@@ -4,11 +4,17 @@ import {
   climateInsights,
   fieldContextInsights,
 } from "../features/field-insights";
-import { initialDemo } from "../lib/demo";
+import { loadDemoPower, usesStoredDemoPower } from "../features/demo-power";
+import SoilEstimate from "../components/SoilEstimate";
+import {
+  FieldDataSources,
+  waterSources,
+  satelliteSources,
+} from "../components/FieldDataSources";
 import VegetationAnalytics from "../components/VegetationAnalytics";
 import { FieldPicker } from "../components/FieldPicker";
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart,
@@ -49,7 +55,11 @@ export default function Analytics() {
   const { data: farms, isLoading, error: farmsError } = useData();
   const { demo, user } = useAuth();
   const field = farms?.fields.find((f) => f.id === fieldId);
-  const [tab, setTab] = useState("Климат");
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(() =>
+    params.get("tab") === "sources" ? "Источники" : "Климат",
+  );
+  const climateTab = !["Растительность", "Источники"].includes(tab);
   const [year, setYear] = useState(
     demo ? 2025 : new Date().getUTCFullYear() - 1,
   );
@@ -79,18 +89,12 @@ export default function Analytics() {
       field?.boundary,
       year,
     ],
-    enabled: !!field && tab !== "Растительность",
+    enabled: !!field && climateTab,
     staleTime: 60_000,
     refetchInterval: (query) => (query.state.data?.pending ? 5000 : false),
     retry: 1,
     queryFn: async () => {
-      if (demo) {
-        if (year !== 2025)
-          throw new Error("В демо доступны наблюдения только за 2025 год.");
-        const response = await fetch("/demo-power-2025.json");
-        if (!response.ok) throw new Error("Демо-наблюдения недоступны");
-        return response.json();
-      }
+      if (demo && field) return loadDemoPower(field, year);
       if (!supabase) throw new Error("Supabase не настроен");
       const { data, error } = await supabase.functions.invoke("nasa-power", {
         body: { fieldId, year },
@@ -136,11 +140,7 @@ export default function Analytics() {
   const climateGdd = powerMetrics(climateRows, climate?.days ?? 0).gdd5;
   const fmt = (n: number | null) => (n === null ? "—" : n.toFixed(1));
   const insightPeriod = { year, start, end };
-  const matchesDemoBoundary =
-    !demo ||
-    (field.id === initialDemo.fields[0].id &&
-      JSON.stringify(field.boundary) ===
-        JSON.stringify(initialDemo.fields[0].boundary));
+  const storedDemo = demo && usesStoredDemoPower(field, year);
   const seasons = farms?.seasons.filter((s) => s.field_id === field.id) ?? [];
   return (
     <main className="page analytics">
@@ -177,7 +177,7 @@ export default function Analytics() {
               <option key={y}>{y}</option>
             ))}
           </select>
-          {!demo && tab !== "Растительность" && (
+          {!demo && climateTab && (
             <Button
               variant="outline"
               disabled={refreshing || query.isFetching || query.data?.pending}
@@ -206,27 +206,34 @@ export default function Analytics() {
           </Link>
         </div>
       </div>
-      {tab !== "Растительность" && (
+      {climateTab && (
         <div className="data-note">
           <Sun size={18} />
           <div>
             <strong>
-              {demo
-                ? "NASA POWER · реальные наблюдения для демо-локации"
+              {storedDemo
+                ? "NASA POWER · сохранённые наблюдения для Северного поля"
                 : query.data?.metadata
                   ? `${query.data.metadata.source}${query.data.cached ? " · из кэша" : ""}`
                   : "Климатические наблюдения NASA POWER"}
             </strong>
             <p>
-              {demo
-                ? "Сохранённые наблюдения за 2025 год: 51.197° N, 69.3695° E. Поля и урожаи — примеры. Новые демополя используют эту же фиксированную локацию."
+              {storedDemo
+                ? "Сохранённый набор за 2025 год для исходной границы Северного поля."
                 : "Данные климатической сетки для центра поля. Они не измеряют влажность или состав почвы на вашем участке."}
             </p>
           </div>
         </div>
       )}
       <div className="tabs" role="tablist">
-        {["Климат", "Вода", "Растительность", "Почва", "Риски"].map((x) => (
+        {[
+          "Климат",
+          "Вода",
+          "Растительность",
+          "Почва",
+          "Риски",
+          "Источники",
+        ].map((x) => (
           <button
             role="tab"
             aria-selected={tab === x}
@@ -238,7 +245,7 @@ export default function Analytics() {
           </button>
         ))}
       </div>
-      {tab !== "Растительность" && (
+      {climateTab && (
         <>
           {(query.isFetching || query.data?.pending) && (
             <p role="status">Получаем наблюдения NASA POWER за {year} год…</p>
@@ -271,7 +278,7 @@ export default function Analytics() {
           )}
         </>
       )}
-      {(tab === "Климат" || tab === "Растительность") && (
+      {["Климат", "Растительность", "Вода", "Источники"].includes(tab) && (
         <section className="card">
           <div className="row">
             <label>
@@ -374,10 +381,7 @@ export default function Analytics() {
           insights={[
             ...((query.isFetching || query.data?.pending) && !rows.length
               ? []
-              : climateInsights(
-                  matchesDemoBoundary ? rows : [],
-                  insightPeriod,
-                )),
+              : climateInsights(rows, insightPeriod)),
             ...fieldContextInsights(
               field,
               seasons,
@@ -645,6 +649,26 @@ export default function Analytics() {
           </section>
         </div>
       )}
+      {tab === "Вода" && climate && (
+        <FieldDataSources
+          field={field}
+          period={insightPeriod}
+          selected={waterSources}
+        />
+      )}
+      {tab === "Источники" && climate && (
+        <>
+          <p>
+            Выборки для границы этого поля за {start} — {end}. Снимки и
+            модельные оценки описывают отдельные дни или ячейки.
+          </p>
+          <FieldDataSources
+            field={field}
+            period={insightPeriod}
+            selected={satelliteSources}
+          />
+        </>
+      )}
       {tab === "Растительность" && (
         <VegetationAnalytics
           field={field}
@@ -660,10 +684,8 @@ export default function Analytics() {
           <p>
             Тип почвы: <strong>{field.soil_type || "не указан"}</strong>
           </p>
-          <p>
-            Источник: сведения фермера. Лабораторные показатели и внешние
-            почвенные карты не подключены.
-          </p>
+          <p>Ручной тип почвы указан хозяйством.</p>
+          <SoilEstimate boundary={field.boundary} />
           <Link className="button outline" to="/farms">
             Дополнить сведения →
           </Link>
@@ -671,6 +693,13 @@ export default function Analytics() {
       )}
       {tab === "Почва" && (
         <TerrainAnalytics field={field} ownerId={user?.id} demo={demo} />
+      )}
+      {tab === "Почва" && (
+        <FieldDataSources
+          field={field}
+          period={insightPeriod}
+          selected={["srtm"]}
+        />
       )}
       {tab === "Риски" && rows.length > 0 && (
         <div className="chart-grid">

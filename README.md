@@ -9,7 +9,7 @@ Russian-language agricultural decision support. React + TypeScript + Vite fronte
 - Сравнение показывает замены по годам и до двух альтернатив к плану фермера. Выбранные культуры можно закрепить. Результат сохраняется и открывается повторно. На широком экране годы выровнены между карточками, на узком планы показаны последовательно.
 - Для тестовых контуров в Казахстане и Небраске подготовлены реальные выборки. Среди них SoilGrids, NASA POWER и отдельные записи из IMERG Final, GLDAS и NLDAS. Источники, покрытие и ограничения описаны в [реестре данных](docs/data-preparation.md).
 
-В локальном деморежиме проверен путь от создания поля до повторного открытия сравнения. Для опубликованной версии остаются развёртывание сервиса SoilGrids и сквозная проверка под обычным аккаунтом. Сравнение носит справочный характер. Для рекомендации по посеву нужны проверенные местные сроки и сведения о сорте, а для расчёта полива нужны данные о почве и доступной воде.
+В локальном деморежиме проверен путь от создания поля до повторного открытия сравнения. Приложение запрашивает данные для открытого поля, в аналитике у каждого источника есть собственный результат и статус. Для опубликованной версии остаются развёртывание API поля и сквозная проверка под обычным аккаунтом. Сравнение носит справочный характер. Для рекомендации по посеву нужны проверенные местные сроки и сведения о сорте, а для расчёта полива нужны данные о почве и доступной воде.
 
 ## Architecture
 
@@ -33,9 +33,9 @@ npm run dev
 
 Populate `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with the project URL and public anon/publishable key. Add `VITE_MAPTILER_KEY` to enable licensed satellite tiles; restrict this public key to your application origins. Without it the map uses an explicitly labeled fallback.
 
-For local SoilGrids estimates, install the Python dependencies with `python -m pip install -r scripts/field_data/requirements.txt`. Vite serves the local `/api/soil` endpoint. On Vercel, `vercel.json` deploys the same endpoint as the `field_data` Python service (`scripts/field_data/api.py`) routed at `/api/soil`; run `vercel dev` to test both services together. Set `VITE_SOIL_URL` only if the endpoint lives on a different URL. Keep the optional NASA Earthdata token in a local ignored file such as `.env.earthdata`. See [data preparation](docs/data-preparation.md).
+For live SoilGrids and supplementary NASA observations, install the Python dependencies with `python -m pip install -r requirements.txt`. Local Vite and the Vercel configuration serve `/api/field-data` and the compatible `/api/soil` endpoint. On Vercel, use the repository root as the project root so the functions can import the shared loaders. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for `/api/field-data`. Set `EARTHDATA_TOKEN` in the function environment for archives that require it. In local development, the loader reads the token from `.env.earthdata`. The optional `VITE_SOIL_URL` setting uses the `/api/soil` request format. See [data preparation](docs/data-preparation.md).
 
-Apply both SQL files in `supabase/migrations` in filename order through Supabase CLI (`supabase db push`) or SQL editor. Configure Auth Site URL and redirect allow-list for `/map` and `/auth` on your localhost and deployed origins. Enable email/password auth and configure SMTP for production confirmation/reset messages.
+Apply the SQL files in `supabase/migrations` in filename order through Supabase CLI (`supabase db push`) or SQL editor. Configure Auth Site URL and redirect allow-list for `/map` and `/auth` on your localhost and deployed origins. Enable email/password auth and configure SMTP for production confirmation/reset messages.
 
 ```sh
 supabase functions deploy nasa-power
@@ -75,7 +75,7 @@ A successful frontend build does not establish that a hosted Supabase migration 
 
 ## Data provenance and model scope
 
-`public/demo-power-2025.json` contains **365 real daily NASA POWER observations** retrieved for longitude 69.3695, latitude 51.197, for calendar year 2025. Its metadata preserves the upstream API version, sources, retrieval timestamp, location, units and request URL. Demo farms, boundaries and yields are illustrative. Climate charts for demo fields always refer to that fixed location; only the original northern demo field uses those observations in the planner. Production fields retrieve their own centroid observations through the Edge Function.
+`public/demo-power-2025.json` contains **365 real daily NASA POWER observations** for the original northern demo field in 2025. Its metadata preserves the upstream API version, sources, retrieval timestamp, location, units and request URL. For a new demo field or an edited boundary, the app queries NASA POWER using that field's coordinates. Production fields retrieve their own centroid observations through the Edge Function.
 
 Indicative water ranges follow FAO Irrigation Water Management Training Manual 3, chapter 3, table 14: https://www.fao.org/4/s2022e/s2022e07.htm . Growing durations and drought categories are simplified MVP assumptions, not cultivar-specific calibration. The model considers family transitions, legumes, indicative water demand and historical dry periods. It does not estimate profit, yield, actual soil moisture or field-specific disease probability. The annual dry-period indicator can include months outside the growing season; validate local sowing/harvest windows before agronomic use.
 
@@ -97,7 +97,7 @@ The checked-in `src/lib/database.types.ts` is schema-aligned source typing, not 
 
 ## Still requires connected deployment validation
 
-Supabase registration/confirmation/recovery, hosted migration execution, RLS isolation, production field/scenario persistence and Edge Function cache behavior need a configured Supabase project. Satellite imagery needs a licensed MapTiler key. These are not claimed as successfully tested. NDVI is deliberately unavailable. Multi-year statistical trend fitting and cultivar-specific agronomic validation are outside this MVP; the dashboard supports selecting historical years.
+Supabase registration/confirmation/recovery, hosted migration execution, RLS isolation, production field/scenario persistence and Edge Function cache behavior need a configured Supabase project. Satellite imagery needs a licensed MapTiler key. The hosted NDVI paths for HLS and Sentinel-2 still need an authenticated end-to-end check. See [runtime data integration status](docs/data-preparation.md#реестр-исходного-списка). Multi-year statistical trend fitting and cultivar-specific agronomic validation are outside this MVP; the dashboard supports selecting historical years.
 
 Registration location search requires `VITE_MAPTILER_KEY`. Add the exact origin and `/map` path of your running frontend to the Supabase Auth redirect allow-list (for example, `http://127.0.0.1:5174/map` when Vite picks port 5174). Run `supabase/tests/registration.sql` on a disposable database after applying the migrations.
 

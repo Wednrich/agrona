@@ -30,6 +30,7 @@ import { useUI } from "../lib/ui";
 import type { Field } from "../lib/types";
 import FieldForm from "../components/FieldForm";
 import SoilEstimate from "../components/SoilEstimate";
+import FieldWeather from "../components/FieldWeather";
 import { Button } from "../components/ui/button";
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -649,12 +650,13 @@ export default function MapPage() {
               <details className="flow-details field-data">
                 <summary>Данные о поле</summary>
                 <SoilEstimate boundary={field.boundary} />
+                <FieldWeather field={field} />
                 <p>
                   {field.irrigation_type
                     ? `Орошение · ${field.irrigation_type}`
                     : "Орошение не указано"}
                 </p>
-                <Link to={`/analytics/${field.id}`}>
+                <Link to={`/analytics/${field.id}?tab=sources`}>
                   Погода и спутниковые данные →
                 </Link>
               </details>

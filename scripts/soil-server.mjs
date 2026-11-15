@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 
 // Local development and preview use the same verified WCS reader as preparation.
-export function soilMiddleware(request, response, next) {
-  if (request.url !== "/api/soil") return next();
+export function fieldDataMiddleware(request, response, next) {
+  const legacySoil = request.url === "/api/soil";
+  if (!legacySoil && request.url !== "/api/field-data") return next();
   if (request.method !== "POST") {
     response.writeHead(405).end();
     return;
@@ -13,17 +14,25 @@ export function soilMiddleware(request, response, next) {
     if (body.length > 64000) request.destroy();
   });
   request.on("end", () => {
-    let boundary;
+    let payload;
     try {
-      boundary = JSON.parse(body);
-      if (boundary.type !== "Polygon") throw new Error();
+      payload = JSON.parse(body);
+      const boundary = legacySoil ? payload : payload.boundary;
+      if (boundary?.type !== "Polygon") throw new Error();
     } catch {
       response.writeHead(400).end();
       return;
     }
     const child = spawn(
       process.env.AGRONA_PYTHON || "python",
-      ["-X", "utf8", "-m", "scripts.field_data.soil_request"],
+      [
+        "-X",
+        "utf8",
+        "-m",
+        legacySoil
+          ? "scripts.field_data.soil_request"
+          : "scripts.field_data.live",
+      ],
       {
         windowsHide: true,
         timeout: 180000,
@@ -46,6 +55,9 @@ export function soilMiddleware(request, response, next) {
       }
     });
     child.stdin.on("error", fail);
-    child.stdin.end(JSON.stringify(boundary));
+    response.on("close", () => {
+      if (!response.writableEnded) child.kill();
+    });
+    child.stdin.end(JSON.stringify(payload));
   });
 }

@@ -1,24 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "app": {
-      "root": ".",
-      "framework": "vite"
-    },
-    "field_data": {
-      "root": "scripts/field_data",
-      "runtime": "python",
-      "entrypoint": "api:app"
+  "framework": "vite",
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 180,
+      "excludeFiles": "{tests/**,public/**,dist/**,data/prepared/**}"
     }
   },
   "rewrites": [
-    {
-      "source": "/api/soil",
-      "destination": { "service": "field_data" }
-    },
-    {
-      "source": "/(.*)",
-      "destination": { "service": "app" }
-    }
+    { "source": "/((?!api(?:/|$)|assets/).*)", "destination": "/index.html" }
   ]
 }

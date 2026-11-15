@@ -1,17 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 // @ts-expect-error Local Node middleware is JavaScript.
-import { soilMiddleware } from "./scripts/soil-server.mjs";
+import { fieldDataMiddleware } from "./scripts/soil-server.mjs";
 export default defineConfig({
   plugins: [
     react(),
     {
-      name: "field-soil",
+      name: "field-data",
       configureServer(server) {
-        server.middlewares.use(soilMiddleware);
+        server.middlewares.use(fieldDataMiddleware);
       },
       configurePreviewServer(server) {
-        server.middlewares.use(soilMiddleware);
+        server.middlewares.use(fieldDataMiddleware);
       },
     },
   ],

@@ -33,6 +33,10 @@ export function TerrainAnalytics({
         body: { fieldId: field.id, expectedRevision },
       });
       if (error instanceof FunctionsHttpError) {
+        if (error.context.status === 404)
+          throw new Error(
+            "Расчёт уклона пока недоступен. Оценка высоты SRTM загружается отдельно.",
+          );
         const response = await error.context
           .clone()
           .json()
@@ -58,7 +62,12 @@ export function TerrainAnalytics({
         NASA SRTMGL1 v003 · 1 угловая секунда (около 30 м по широте) · февраль
         2000 · OpenTopography{result?.cached ? " · из кэша" : ""}
       </p>
-      {demo && <p>Для анализа рельефа откройте сохранённое поле в аккаунте.</p>}
+      {demo && (
+        <p>
+          Расчёт уклона доступен в аккаунте. Оценка высоты SRTM загружается
+          отдельно.
+        </p>
+      )}
       {waiting && <p role="status">Загружаем и рассчитываем рельеф…</p>}
       {query.error && (
         <p className="error" role="alert">
