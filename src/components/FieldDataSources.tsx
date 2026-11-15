@@ -156,6 +156,8 @@ function descriptions(
 }
 
 function failure(reason?: string) {
+  if (reason === "Requires the local NASA archive pipeline")
+    return "Источник доступен только при локальной обработке архивов NASA.";
   if (reason?.includes("EARTHDATA_TOKEN"))
     return "Для этого источника серверу нужен доступ NASA Earthdata.";
   if (reason?.includes("application terms"))

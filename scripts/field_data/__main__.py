@@ -6,7 +6,6 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import requests
-from aiohttp import ClientError
 from shapely.geometry import box, mapping, shape
 
 from .earthdata import ecostress, hls, modis, smap, srtm, viirs
@@ -14,6 +13,18 @@ from .geometry import validate_geometry
 from .gesdisc import gldas, imerg_final, nldas
 from .public import NoCoverage, SourceError, imerg_power, power, soilgrids, ssurgo, statsgo, usgs_water
 from .regional import cocorahs, fao_calendar, gaez, landfire, naip, nlcd, prism, sentinel2
+
+# Only the optional local archive reader uses aiohttp.
+try:
+    from aiohttp import ClientError
+except ModuleNotFoundError as error:
+    if error.name != "aiohttp":
+        raise
+    NETWORK_ERRORS = (requests.RequestException,)
+else:
+    NETWORK_ERRORS = (requests.RequestException, ClientError)
+
+LOCAL_ARCHIVE_PACKAGES = {"h5py", "fsspec", "aiohttp"}
 
 # Public sampling contours, not claims about field ownership or actual crop history.
 PILOTS = {
@@ -72,7 +83,11 @@ def prepare(geometry, start, end, names, pilot):
             results[name] = {"status": "no_coverage", "reason": str(error)}
         except SourceError as error:
             results[name] = {"status": "blocked", "reason": str(error)}
-        except (requests.RequestException, ClientError) as error:
+        except ModuleNotFoundError as error:
+            if error.name not in LOCAL_ARCHIVE_PACKAGES:
+                raise
+            results[name] = {"status": "blocked", "reason": "Requires the local NASA archive pipeline"}
+        except NETWORK_ERRORS as error:
             # Exception strings may expose redirected URLs, so keep the network error class only.
             results[name] = {"status": "blocked", "reason": type(error).__name__}
         except (KeyError, ValueError, OSError, RuntimeError, StopIteration) as error:

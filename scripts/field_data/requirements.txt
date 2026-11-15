@@ -1,2 +1,4 @@
 -r ../../requirements.txt
+h5py>=3.12,<4
+fsspec[http]>=2025,<2027
 pyhdf>=0.11,<1

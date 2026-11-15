@@ -4,7 +4,7 @@
   "functions": {
     "api/*.py": {
       "maxDuration": 180,
-      "excludeFiles": "{tests/**,public/**,dist/**,data/prepared/**}"
+      "excludeFiles": "{tests/**,public/**,dist/**,data/prepared/**,docs/**,supabase/**,workers/hls/test_*.py,**/__pycache__/**}"
     }
   },
   "rewrites": [

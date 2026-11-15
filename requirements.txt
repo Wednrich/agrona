@@ -5,5 +5,3 @@ numpy>=2,<3
 rasterio==1.4.3; python_version < "3.14"
 rasterio==1.4.4; python_version >= "3.14"
 shapely>=2,<3
-h5py>=3.12,<4
-fsspec[http]>=2025,<2027

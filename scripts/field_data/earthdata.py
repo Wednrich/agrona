@@ -8,9 +8,6 @@ from time import monotonic
 from urllib.parse import urlsplit
 from zipfile import ZipFile
 
-import h5py
-import fsspec
-from aiohttp import ClientTimeout
 import numpy as np
 import rasterio
 import requests
@@ -162,6 +159,10 @@ def srtm(geometry, _start, _end):
 
 
 def smap(geometry, start, end):
+    import fsspec
+    import h5py
+    from aiohttp import ClientTimeout
+
     point = geometry.centroid
     x, y = transform("EPSG:4326", "EPSG:6933", [point.x], [point.y])
     # NSIDC global EASE-Grid 2.0, nominal 9 km.
@@ -312,6 +313,8 @@ def modis(geometry, start, end):
 
 
 def viirs(geometry, start, end):
+    import h5py
+
     scenes = search_granules("VNP13A1", "002", geometry, start, end, limit=3)
     rows = []
     for scene in scenes:

@@ -1,7 +1,6 @@
 from datetime import date
 from functools import partial
 
-import h5py
 import numpy as np
 
 from .earthdata import choose_asset, download, search_granules
@@ -46,6 +45,8 @@ def read_cell(file, variable, point, axes, spacing, expected_units):
 
 
 def sample(geometry, start, end, *, product, version, variable, suffix, axes, spacing, hours, soil=False):
+    import h5py
+
     scenes = search_granules(product, version, geometry, start, end, limit=1)
     if not scenes:
         raise NoCoverage("No GES DISC file matched the location and dates")

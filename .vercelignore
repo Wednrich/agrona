@@ -3,3 +3,6 @@
 workers/hls/.env
 data/prepared/
 tests/
+__pycache__/
+*.pyc
+.venv/
