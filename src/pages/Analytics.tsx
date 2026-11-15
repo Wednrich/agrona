@@ -1,3 +1,4 @@
+import GrowingCalendar from "../components/GrowingCalendar";
 import { TerrainAnalytics } from "../components/TerrainAnalytics";
 import { FieldInsights } from "../components/FieldInsights";
 import {
@@ -58,9 +59,9 @@ export default function Analytics() {
   const field = farms?.fields.find((f) => f.id === fieldId);
   const [params] = useSearchParams();
   const [tab, setTab] = useState(() =>
-    params.get("tab") === "advisor" ? "ИИ-агроном" : params.get("tab") === "sources" ? "Источники" : "Климат",
+    params.get("tab") === "calendar" ? "Календарь выращивания" : params.get("tab") === "advisor" ? "ИИ-агроном" : params.get("tab") === "sources" ? "Источники" : "Климат",
   );
-  const climateTab = !["Растительность", "Источники"].includes(tab);
+  const climateTab = !["Растительность", "Источники", "Календарь выращивания"].includes(tab);
   const [year, setYear] = useState(
     demo ? 2025 : new Date().getUTCFullYear() - 1,
   );
@@ -236,6 +237,7 @@ export default function Analytics() {
         {[
           "Климат",
           "Вода",
+          "Календарь выращивания",
           "Растительность",
           "Почва",
           "Риски",
@@ -383,6 +385,7 @@ export default function Analytics() {
           )}
         </section>
       )}
+      {tab === "Календарь выращивания" && <GrowingCalendar key={field.id} field={field} owner={user?.id} demo={demo} />}
       {tab === "Климат" && climate && (
         <FieldInsights
           title="Заключения по полю"

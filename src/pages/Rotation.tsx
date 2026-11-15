@@ -713,6 +713,7 @@ function RotationForm({
                     : `КАНДИДАТ ${i + 1}`}
                 </span>
                 <h2>{s.name}</h2>
+                <p>Полный цикл зависит от сорта и даты посева. Проверьте исторические ограничения в <Link to={`/analytics/${field.id}?tab=calendar`}>календаре выращивания</Link>.</p>
                 <div className="sequence">
                   {s.crop_sequence.map((id, y) => (
                     <div key={y}>

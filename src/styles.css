@@ -1927,3 +1927,19 @@ td a {
     display: none;
   }
 }
+
+.calendar-controls, .calendar-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: .75rem;
+  margin: 1rem 0;
+}
+.calendar-controls label, .calendar-month small { display: block; }
+.calendar-controls input, .calendar-controls select { display: block; width: 100%; }
+.calendar-month { border: 1px solid #cbd5d1; border-radius: .6rem; padding: .6rem; }
+.calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: .2rem; margin-top: .4rem; }
+.calendar-days button { border-radius: .25rem; min-height: 2rem; color: #202c26; background: #e7ebe9; }
+.calendar-days button[data-status="risky"] { background: #ffe69d; }
+.calendar-days button[data-status="unfavorable"] { background: #ffd5d1; }
+.calendar-days button[data-status="favorable"] { background: #c8f0cc; }
+.calendar-days button[aria-pressed="true"] { outline: 2px solid currentColor; }
