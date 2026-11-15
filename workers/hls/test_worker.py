@@ -128,7 +128,7 @@ class HlsDownloadTest(unittest.TestCase):
         self, get, sleep, urls, read, discover, rpc,
     ):
         urls.return_value = [self.url]
-        discover.return_value = [{"meta": {"concept-id": name}} for name in ("bad", "good")]
+        discover.return_value = [{"meta": {"concept-id": name, "revision-id": 1}} for name in ("bad", "good")]
         get.side_effect = [self.response(502) for _ in range(3)] + [self.response(206)]
         good = {"conceptId": "good", "acquiredAt": "2014-06-02"}
         cached = {"conceptId": "cached", "acquiredAt": "2014-06-01"}
@@ -137,23 +137,63 @@ class HlsDownloadTest(unittest.TestCase):
         self.assertEqual(get.call_count, 4)
         read.assert_called_once()
         self.assertEqual(rpc.call_args.args[1]["p_observations"], [cached, good])
-        self.assertFalse(rpc.call_args.args[1]["p_done"])
-        self.assertIn("часть снимков", rpc.call_args.args[1]["p_error"])
+        self.assertEqual(rpc.call_args.args[1]["p_state"], "partial")
+        self.assertIn("Часть снимков", rpc.call_args.args[1]["p_warning"])
         self.assertEqual(sleep.call_args_list, [call(1), call(2)])
 
     @patch("worker.rpc")
     @patch("worker.discover")
     @patch("worker.read_granule")
     def test_auth_stops_job_and_saves_partial_observations(self, read, discover, rpc):
-        discover.return_value = [{"meta": {"concept-id": name}} for name in ("first", "denied", "next")]
+        discover.return_value = [{"meta": {"concept-id": name, "revision-id": 1}} for name in ("first", "denied", "next")]
         first = {"conceptId": "first", "acquiredAt": "2014-06-01"}
         read.side_effect = [first, worker.HlsAuthorizationError(401)]
         with redirect_stderr(StringIO()) as logs:
             worker.process({"job_id": "test", "analysis_year": 2014, "boundary": {}}, "private-token")
         self.assertEqual(read.call_count, 2)
         self.assertEqual(rpc.call_args.args[1]["p_observations"], [first])
-        self.assertIn("HTTP 401", rpc.call_args.args[1]["p_error"])
+        self.assertIn("HTTP 401", rpc.call_args.args[1]["p_warning"])
         self.assertNotIn("private-token", logs.getvalue())
+
+
+    @patch("worker.rpc")
+    @patch("worker.discover")
+    @patch("worker.read_granule")
+    @patch("worker.time.monotonic")
+    def test_timeout_resumes_only_new_revisions_and_unprocessed_granules(
+        self, clock, read, discover, rpc,
+    ):
+        now = 0
+        clock.side_effect = lambda: now
+        entries = [
+            {"meta": {"concept-id": name, "revision-id": revision}}
+            for name, revision in (("old", 1), ("empty", 1), ("revised", 2))
+        ]
+        discover.return_value = entries
+        old = {"conceptId": "old", "revisionId": 1, "acquiredAt": "2014-06-01"}
+        revised = {"conceptId": "revised", "revisionId": 1, "acquiredAt": "2014-06-02"}
+        job = {"job_id": "first", "analysis_year": 2014, "boundary": {}, "cached": [old, revised]}
+
+        def expire(*args):
+            nonlocal now
+            now += worker.LEASE_SECONDS
+            return None
+
+        read.side_effect = expire
+        worker.process(job, "token")
+        checkpoint = rpc.call_args.args[1]
+        self.assertEqual(checkpoint["p_state"], "partial")
+        self.assertEqual(checkpoint["p_observations"], [old, revised])
+        self.assertEqual(checkpoint["p_empty"][0]["conceptId"], "empty")
+
+        read.reset_mock(side_effect=True)
+        read.return_value = {**revised, "revisionId": 2}
+        job.update(job_id="second", cached=checkpoint["p_observations"] + checkpoint["p_empty"])
+        worker.process(job, "token")
+        read.assert_called_once()
+        self.assertEqual(read.call_args.args[0], entries[2])
+        self.assertEqual(rpc.call_args.args[1]["p_state"], "succeeded")
+        self.assertEqual(rpc.call_args.args[1]["p_observations"], [old, read.return_value])
 
 
 if __name__ == "__main__":

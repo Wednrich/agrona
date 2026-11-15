@@ -5,6 +5,7 @@ import {
 import type { RotationPeriod } from "../features/rotation-climate";
 import { FieldInsights } from "./FieldInsights";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { Leaf } from "lucide-react";
 import {
@@ -19,6 +20,7 @@ import {
 import { supabase } from "../lib/supabase";
 import type { Field } from "../lib/types";
 const earliestHlsYear = 2013;
+const hlsWaitMs = 2 * 60 * 1000;
 type HlsDay = VegetationSample & {
   acquiredAt: string;
   min: number | null;
@@ -32,6 +34,7 @@ type VegetationResponse = {
   cached?: boolean;
   pending?: boolean;
   queued?: boolean;
+  state?: "queued" | "running" | "partial" | "succeeded" | "failed";
   warning?: string;
   unsupported?: boolean;
 };
@@ -49,13 +52,19 @@ export default function HlsVegetationAnalytics({
   demo: boolean;
   insightPeriod?: RotationPeriod;
 }) {
+  const queryKey = ["hls-vegetation", ownerId, field.id, field.boundary, year];
+  const scope = JSON.stringify(queryKey);
+  const [pausedScope, setPausedScope] = useState<string | null>(null);
+  const paused = pausedScope === scope;
   const query = useQuery<VegetationResponse>({
-    queryKey: ["hls-vegetation", ownerId, field.id, field.boundary, year],
+    queryKey,
     enabled: !demo && !!ownerId && !!supabase && year >= earliestHlsYear,
     staleTime: 60000,
     retry: false,
+    refetchOnWindowFocus: !paused,
+    refetchOnReconnect: !paused,
     refetchInterval: (state) =>
-      state.state.data?.pending && !state.state.error ? 5000 : false,
+      !paused && state.state.data?.pending && !state.state.error ? 5000 : false,
     queryFn: async () => {
       const { data, error } = await supabase!.functions.invoke(
         "hls-vegetation",
@@ -77,6 +86,12 @@ export default function HlsVegetationAnalytics({
       return data;
     },
   });
+  const pending = query.data?.pending === true;
+  useEffect(() => {
+    if (!pending || paused || query.isError) return;
+    const timer = window.setTimeout(() => setPausedScope(scope), hlsWaitMs);
+    return () => window.clearTimeout(timer);
+  }, [pending, paused, scope, query.isError]);
   const rows = query.data?.observations ?? [];
   const valid = rows.filter(
     (row) => row.mean !== null && row.tileContainsField,
@@ -88,8 +103,14 @@ export default function HlsVegetationAnalytics({
     : null;
   const format = (value: number | null) =>
     value === null ? "—" : value.toFixed(3);
-  const waiting = query.isFetching || query.data?.pending;
-  const warning = query.error?.message ?? query.data?.warning;
+  const waiting = query.isFetching || (pending && !paused && !query.isError);
+  const warning =
+    query.error?.message ??
+    (paused && pending
+      ? query.data?.queued
+        ? "NASA HLS ещё в очереди. Автоматическая проверка приостановлена."
+        : "NASA HLS ещё обрабатывает снимки. Автоматическая проверка приостановлена."
+      : query.data?.warning);
   return (
     <div className="stack" style={{ display: "grid", gap: 16 }}>
       {!demo &&
@@ -134,7 +155,9 @@ export default function HlsVegetationAnalytics({
         <>
           {waiting && !warning && (
             <p role="status">
-              {query.data?.queued
+              {query.data?.state === "partial"
+                ? "Частичные результаты сохранены. Ожидается продолжение анализа"
+                : query.data?.queued
                 ? "Анализ ожидает запуска"
                 : "Выполняется анализ"}{" "}
               NASA HLS за {year} год…
@@ -154,7 +177,13 @@ export default function HlsVegetationAnalytics({
           )}
           {!waiting && warning && !query.data?.unsupported && (
             <div>
-              <Button variant="outline" onClick={() => void query.refetch()}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPausedScope(null);
+                  void query.refetch();
+                }}
+              >
                 Проверить снова
               </Button>
             </div>

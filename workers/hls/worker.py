@@ -243,57 +243,77 @@ def rpc(name, params):
 
 
 def process(job, token):
-    observations = {row["conceptId"]: row for row in job.get("cached", [])}
+    cached = job.get("cached", [])
+    observations = {row["conceptId"]: row for row in cached if not row.get("empty")}
+    empty = {row["conceptId"]: row for row in cached if row.get("empty")}
     deadline = time.monotonic() + LEASE_SECONDS
-    errors = 0
+    errors = False
     completed = 0
 
-    def save(done=False, error=None):
-        return rpc("save_hls_job", {
-            "p_job": job["job_id"], "p_observations": sorted(observations.values(),
+    def save(state="checkpoint", warning=None):
+        return rpc("checkpoint_hls_job", {
+            "p_job": job["job_id"],
+            "p_observations": sorted(observations.values(),
                 key=lambda row: (row["acquiredAt"], row["conceptId"])),
-            "p_done": done, "p_error": error,
+            "p_empty": list(empty.values()),
+            "p_state": state,
+            "p_warning": warning,
+            "p_progress": completed > 0,
         })
 
-    try:
-        for product in COLLECTIONS:
-            if product == "HLSS30" and job["analysis_year"] < 2015:
-                continue
-            for granule in discover(job["boundary"], job["analysis_year"], product):
-                if time.monotonic() > deadline:
-                    save(error="Анализ прерван по лимиту времени. Сохранены частичные результаты.")
-                    return
+    unavailable = "Часть снимков NASA HLS временно недоступна."
+    for product in COLLECTIONS:
+        if product == "HLSS30" and job["analysis_year"] < 2015:
+            continue
+        granules = iter(discover(job["boundary"], job["analysis_year"], product))
+        while time.monotonic() < deadline:
+            try:
+                granule = next(granules)
                 concept = granule["meta"]["concept-id"]
-                if concept in observations and observations[concept].get("revisionId") == granule["meta"].get("revision-id"):
-                    continue
-                try:
-                    row = read_granule(granule, product, job["boundary"], token, deadline)
-                except HlsAuthorizationError as error:
-                    print(str(error), file=sys.stderr)
-                    save(error=str(error))
-                    return
-                except (HlsAssetError, ValueError):
-                    # Provider/GDAL errors can contain request details. Log only the granule ID.
-                    print("HLS raster unavailable; skipping granule.", file=sys.stderr)
-                    errors += 1
-                    if errors >= 8:
-                        save(error="Часть снимков NASA HLS недоступна. Проверьте доступ Earthdata или повторите позже.")
-                        return
-                    continue
-                if row:
-                    observations[concept] = row
-                    completed += 1
-                    if completed % 8 == 0 and not save():
-                        return
-        save(done=not errors, error="Обработана часть снимков. Повторите запрос позже." if errors else None)
-    except (requests.RequestException, RuntimeError, KeyError, ValueError) as error:
-        print(f"HLS job stopped ({type(error).__name__})", file=sys.stderr)
-        save(error="Не удалось завершить загрузку NASA HLS. Доступные результаты сохранены.")
+                revision = granule["meta"]["revision-id"]
+            except StopIteration:
+                break
+            except (requests.RequestException, RuntimeError, KeyError, ValueError):
+                save("partial", "Не удалось завершить поиск снимков в каталоге NASA HLS.")
+                return
+
+            previous = empty.get(concept, observations.get(concept))
+            if previous is not None and previous.get("revisionId") == revision:
+                continue
+            if time.monotonic() >= deadline:
+                save("partial")
+                return
+            try:
+                row = read_granule(granule, product, job["boundary"], token, deadline)
+            except HlsAuthorizationError as error:
+                save("failed", str(error))
+                return
+            except (HlsAssetError, requests.RequestException, ValueError):
+                errors = True
+                continue
+            if row is None:
+                # An empty new revision is a processed catalog entry. Preserve
+                # the earlier historical observation if one already exists.
+                empty[concept] = {"conceptId": concept, "revisionId": revision, "empty": True}
+            else:
+                observations[concept] = row
+                empty.pop(concept, None)
+            completed += 1
+            if completed % 8 == 0 and not save():
+                return
+        else:
+            save("partial", unavailable if errors else None)
+            return
+    if errors:
+        save("partial", unavailable)
+    else:
+        save("succeeded")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--once", action="store_true", help="Process at most one queued job.")
+    parser.add_argument("--field", help="Only claim queued work for this saved field and year.")
     parser.add_argument("--smoke-field", help="Read one actual saved field and try HLS pixels without writing.")
     parser.add_argument("--year", type=int, default=datetime.now(timezone.utc).year-1)
     args = parser.parse_args()
@@ -316,7 +336,8 @@ def main():
         raise SystemExit("No usable pixels found.")
     while True:
         try:
-            jobs = rpc("take_hls_job", {})
+            jobs = (rpc("take_hls_job_for", {"p_field": args.field, "p_year": args.year})
+                    if args.field else rpc("take_hls_job", {}))
             if jobs:
                 process(jobs[0], token)
         except (requests.RequestException, RuntimeError) as error:

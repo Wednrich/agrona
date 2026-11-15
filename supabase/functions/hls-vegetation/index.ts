@@ -51,21 +51,22 @@ Deno.serve(async (request) => {
       dataset: "hls-v2-ndvi-v1",
       geometry_reference: revision,
     };
-    const [cache, job] = await Promise.all([
-      reader
-        .from("field_analytics")
-        .select("vegetation_metrics,source_metadata")
-        .match(scope)
-        .eq("analysis_period", year)
-        .maybeSingle(),
-      reader
-        .from("earth_observation_jobs")
-        .select("status,started_at,completed_at,error_message")
-        .match(scope)
-        .eq("requested_period", year)
-        .maybeSingle(),
-    ]);
-    if (cache.error || job.error) throw cache.error ?? job.error;
+    const job = await reader
+      .from("earth_observation_jobs")
+      .select("status,started_at,completed_at,error_message")
+      .match(scope)
+      .eq("requested_period", year)
+      .maybeSingle();
+    if (job.error) throw job.error;
+    // A terminal status and its cache are committed together. Read the cache
+    // after the status so a finished response cannot carry an older checkpoint.
+    const cache = await reader
+      .from("field_analytics")
+      .select("vegetation_metrics,source_metadata")
+      .match(scope)
+      .eq("analysis_period", year)
+      .maybeSingle();
+    if (cache.error) throw cache.error;
     const result = {
       observations: cache.data?.vegetation_metrics?.observations ?? [],
       metadata: cache.data?.source_metadata,
@@ -88,17 +89,25 @@ Deno.serve(async (request) => {
       });
     }
     if (job.data?.status === "running") {
+      const queued =
+        job.data.started_at === "-infinity" ||
+        Date.parse(job.data.started_at) <= Date.now() - 15 * 60000;
       return reply({
         ...result,
         pending: true,
-        queued: job.data.started_at === "-infinity",
+        queued,
+        state: queued ? (cache.data ? "partial" : "queued") : "running",
       });
     }
     const age = Date.now() - Date.parse(job.data?.completed_at ?? "");
     if (job.data?.status === "succeeded" && age < 180 * 86400000)
-      return reply(result);
+      return reply({ ...result, state: "succeeded" });
     if (job.data?.status === "failed" && age < 30 * 60000)
-      return reply({ ...result, warning: job.data.error_message });
+      return reply({
+        ...result,
+        state: "failed",
+        warning: job.data.error_message ?? "Не удалось завершить анализ NASA HLS.",
+      });
     const writer = createClient(
       url,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -109,9 +118,15 @@ Deno.serve(async (request) => {
       p_year: year,
     });
     if (error) throw error;
-    return reply({ ...result, pending: true, queued: true });
-  } catch (error) {
-    console.error("HLS queue request failed", error);
+    return reply({
+      ...result,
+      pending: true,
+      queued: true,
+      state: cache.data ? "partial" : "queued",
+    });
+  } catch {
+    // SDK exceptions may contain request details. Do not log raw errors.
+    console.error("HLS queue request failed");
     return reply(
       {
         error:
