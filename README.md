@@ -33,7 +33,7 @@ npm run dev
 
 Populate `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with the project URL and public anon/publishable key. Add `VITE_MAPTILER_KEY` to enable licensed satellite tiles; restrict this public key to your application origins. Without it the map uses an explicitly labeled fallback.
 
-For local SoilGrids estimates, install the Python dependencies with `python -m pip install -r scripts/field_data/requirements.txt`. Vite serves the local `/api/soil` endpoint. A hosted static build needs a deployed SoilGrids endpoint and `VITE_SOIL_URL` if it uses a different URL. Keep the optional NASA Earthdata token in a local ignored file such as `.env.earthdata`. See [data preparation](docs/data-preparation.md).
+For local SoilGrids estimates, install the Python dependencies with `python -m pip install -r scripts/field_data/requirements.txt`. Vite serves the local `/api/soil` endpoint. On Vercel, `vercel.json` deploys the same endpoint as the `field_data` Python service (`scripts/field_data/api.py`) routed at `/api/soil`; run `vercel dev` to test both services together. Set `VITE_SOIL_URL` only if the endpoint lives on a different URL. Keep the optional NASA Earthdata token in a local ignored file such as `.env.earthdata`. See [data preparation](docs/data-preparation.md).
 
 Apply both SQL files in `supabase/migrations` in filename order through Supabase CLI (`supabase db push`) or SQL editor. Configure Auth Site URL and redirect allow-list for `/map` and `/auth` on your localhost and deployed origins. Enable email/password auth and configure SMTP for production confirmation/reset messages.
 

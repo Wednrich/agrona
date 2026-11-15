@@ -1,1 +1,24 @@
-{ "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }] }
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "vite"
+    },
+    "field_data": {
+      "root": "scripts/field_data",
+      "runtime": "python",
+      "entrypoint": "api:app"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/soil",
+      "destination": { "service": "field_data" }
+    },
+    {
+      "source": "/(.*)",
+      "destination": { "service": "app" }
+    }
+  ]
+}
