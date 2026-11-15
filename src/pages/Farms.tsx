@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, ArrowUpRight, Tractor, Trash2, Pencil } from "lucide-react";
 import { useData } from "../lib/data";
 import { useAuth } from "../lib/auth";
 import { useUI } from "../lib/ui";
 import { Button } from "../components/ui/button";
 import FieldForm from "../components/FieldForm";
+import SoilEstimate from "../components/SoilEstimate";
 import type { Field, Season } from "../lib/types";
 export default function Farms() {
   const { data, isLoading, error, save } = useData();
@@ -14,12 +15,20 @@ export default function Farms() {
   const [search, setSearch] = useState("");
   const [fieldForm, setFieldForm] = useState<Field | "new" | null>(null);
   const [farmForm, setFarmForm] = useState(false);
-  const [history, setHistory] = useState<Field | null>(null);
-  const [seasonEdit, setSeasonEdit] = useState<Season | null>(null);
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const history = data?.fields.find(
+    (field) => field.id === params.get("history"),
+  );
+  const [editingSeason, setSeasonEdit] = useState<Season | null>(null);
+  const seasonEdit =
+    editingSeason?.field_id === history?.id ? editingSeason : null;
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const farm = data?.farms.find((f) => f.id === farmId) ?? data?.farms[0];
-  async function perform(action: () => Promise<void>) {
+  const farm =
+    data?.farms.find((f) => f.id === (history?.farm_id ?? farmId)) ??
+    data?.farms[0];
+  async function perform(action: () => Promise<unknown>) {
     setBusy(true);
     setMessage("");
     try {
@@ -133,11 +142,20 @@ export default function Farms() {
                         </Link>
                       </td>
                       <td>{Number(f.area_hectares).toFixed(1)} га</td>
-                      <td>{f.soil_type || "Не указана"}</td>
+                      <td>
+                        {f.soil_type && (
+                          <p>Уточнение фермера · {f.soil_type}</p>
+                        )}
+                        <SoilEstimate boundary={f.boundary} />
+                      </td>
                       <td>{f.irrigation_type || "Не указано"}</td>
                       <td>
                         <div className="row">
-                          <button onClick={() => setHistory(f)}>История</button>
+                          <Link
+                            to={`/farms?history=${encodeURIComponent(f.id)}`}
+                          >
+                            История посевов
+                          </Link>
                           <button
                             aria-label={"Редактировать " + f.name}
                             onClick={() => setFieldForm(f)}
@@ -188,6 +206,11 @@ export default function Farms() {
         <FieldForm
           farmId={farm.id}
           field={fieldForm === "new" ? undefined : fieldForm}
+          onSaved={
+            fieldForm === "new"
+              ? (id) => navigate(`/map?field=${encodeURIComponent(id)}`)
+              : undefined
+          }
           onClose={() => setFieldForm(null)}
         />
       )}
@@ -284,6 +307,10 @@ export default function Farms() {
                 </div>
               ))}
             <h3>{seasonEdit ? "Редактировать сезон" : "Записать сезон"}</h3>
+            <p>
+              Укажите год и культуру, которую выращивали. Даты, урожайность,
+              полив и заметки можно добавить позже.
+            </p>
             <form
               key={seasonEdit?.id ?? "new"}
               onSubmit={async (e) => {
@@ -323,7 +350,14 @@ export default function Farms() {
                 </label>
                 <label>
                   Культура
-                  <select name="crop_id" defaultValue={seasonEdit?.crop_id}>
+                  <select
+                    name="crop_id"
+                    defaultValue={seasonEdit?.crop_id ?? ""}
+                    required
+                  >
+                    <option value="" disabled>
+                      Выберите культуру
+                    </option>
                     {data?.crops.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -379,12 +413,15 @@ export default function Farms() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setHistory(null);
                     setSeasonEdit(null);
+                    setParams({}, { replace: true });
                   }}
                 >
                   Закрыть
                 </Button>
+                <Link to={`/rotation/${encodeURIComponent(history.id)}`}>
+                  Перейти к планированию →
+                </Link>
               </div>
             </form>
           </section>

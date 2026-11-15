@@ -1,0 +1,2728 @@
+{
+  "schemaVersion": 1,
+  "pilot": "kz",
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          76.706,
+          43.245
+        ],
+        [
+          76.706,
+          43.252
+        ],
+        [
+          76.696,
+          43.252
+        ],
+        [
+          76.696,
+          43.245
+        ],
+        [
+          76.706,
+          43.245
+        ]
+      ]
+    ]
+  },
+  "period": {
+    "start": "2025-05-01",
+    "end": "2025-09-30"
+  },
+  "retrievedAt": "2026-11-15T00:30:24+00:00",
+  "sources": {
+    "power": {
+      "status": "ready",
+      "dataset": "NASA POWER daily-ag-v2",
+      "timeStandard": "LST",
+      "method": "Existing AGRONA POWER loader; field centroid on the source grid",
+      "urls": [
+        "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CT2M_MAX%2CT2M_MIN%2CPRECTOTCORR%2CRH2M%2CALLSKY_SFC_SW_DWN%2CWS2M&community=AG&longitude=76.701000&latitude=43.248500&start=20250101&end=20251231&format=JSON"
+      ],
+      "upstream": [
+        {
+          "title": "NASA/POWER Source Native Resolution Daily Data",
+          "api": {
+            "version": "v2.10.3",
+            "name": "POWER Daily API"
+          },
+          "sources": [
+            "MERRA2",
+            "SYN1DEG",
+            "POWER"
+          ],
+          "fill_value": -999,
+          "time_standard": "LST",
+          "start": "20250101",
+          "end": "20251231"
+        }
+      ],
+      "units": {
+        "temperature_mean": "°C",
+        "temperature_max": "°C",
+        "temperature_min": "°C",
+        "precipitation_mm": "mm/day",
+        "humidity": "%",
+        "solar_radiation": "MJ/m²/day",
+        "wind_speed": "m/s"
+      },
+      "resolution": {
+        "temperature_mean": "0.5° × 0.625°",
+        "temperature_max": "0.5° × 0.625°",
+        "temperature_min": "0.5° × 0.625°",
+        "precipitation_mm": "0.5° × 0.625°",
+        "humidity": "0.5° × 0.625°",
+        "solar_radiation": "1° × 1°",
+        "wind_speed": "0.5° × 0.625°"
+      },
+      "coverageDays": {
+        "temperature_mean": 153,
+        "temperature_max": 153,
+        "temperature_min": 153,
+        "precipitation_mm": 153,
+        "humidity": 153,
+        "solar_radiation": 153,
+        "wind_speed": 153
+      },
+      "data": [
+        {
+          "humidity": 72.22,
+          "wind_speed": 1.61,
+          "observation_date": "2025-05-01",
+          "temperature_mean": 9.78,
+          "temperature_max": 15.56,
+          "temperature_min": 4.68,
+          "precipitation_mm": 0.98,
+          "solar_radiation": 23.74
+        },
+        {
+          "humidity": 86.74,
+          "wind_speed": 3.12,
+          "observation_date": "2025-05-02",
+          "temperature_mean": 7.1,
+          "temperature_max": 11.41,
+          "temperature_min": 2.59,
+          "precipitation_mm": 8.17,
+          "solar_radiation": 16.62
+        },
+        {
+          "humidity": 61.77,
+          "wind_speed": 1.29,
+          "observation_date": "2025-05-03",
+          "temperature_mean": 7.37,
+          "temperature_max": 15.31,
+          "temperature_min": 0.93,
+          "precipitation_mm": 0.13,
+          "solar_radiation": 28.22
+        },
+        {
+          "humidity": 49.04,
+          "wind_speed": 2.52,
+          "observation_date": "2025-05-04",
+          "temperature_mean": 10.7,
+          "temperature_max": 19.56,
+          "temperature_min": 1.62,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.27
+        },
+        {
+          "humidity": 42.78,
+          "wind_speed": 2.48,
+          "observation_date": "2025-05-05",
+          "temperature_mean": 11.24,
+          "temperature_max": 16.61,
+          "temperature_min": 6.78,
+          "precipitation_mm": 0,
+          "solar_radiation": 26.25
+        },
+        {
+          "humidity": 46.54,
+          "wind_speed": 2.2,
+          "observation_date": "2025-05-06",
+          "temperature_mean": 10.76,
+          "temperature_max": 16.21,
+          "temperature_min": 5.62,
+          "precipitation_mm": 0,
+          "solar_radiation": 27.47
+        },
+        {
+          "humidity": 42.05,
+          "wind_speed": 1.43,
+          "observation_date": "2025-05-07",
+          "temperature_mean": 13.73,
+          "temperature_max": 21.42,
+          "temperature_min": 5.75,
+          "precipitation_mm": 0,
+          "solar_radiation": 27.49
+        },
+        {
+          "humidity": 44.47,
+          "wind_speed": 2.05,
+          "observation_date": "2025-05-08",
+          "temperature_mean": 15.15,
+          "temperature_max": 21.9,
+          "temperature_min": 7.1,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.14
+        },
+        {
+          "humidity": 60.19,
+          "wind_speed": 1.45,
+          "observation_date": "2025-05-09",
+          "temperature_mean": 12.91,
+          "temperature_max": 18.1,
+          "temperature_min": 7.62,
+          "precipitation_mm": 0.08,
+          "solar_radiation": 12.15
+        },
+        {
+          "humidity": 75.66,
+          "wind_speed": 1.52,
+          "observation_date": "2025-05-10",
+          "temperature_mean": 9.48,
+          "temperature_max": 13.56,
+          "temperature_min": 6.53,
+          "precipitation_mm": 1.17,
+          "solar_radiation": 19.28
+        },
+        {
+          "humidity": 78.1,
+          "wind_speed": 1.98,
+          "observation_date": "2025-05-11",
+          "temperature_mean": 7.81,
+          "temperature_max": 11.1,
+          "temperature_min": 4.6,
+          "precipitation_mm": 8.51,
+          "solar_radiation": 18.62
+        },
+        {
+          "humidity": 69.97,
+          "wind_speed": 1.45,
+          "observation_date": "2025-05-12",
+          "temperature_mean": 7.6,
+          "temperature_max": 12.49,
+          "temperature_min": 2.95,
+          "precipitation_mm": 0.45,
+          "solar_radiation": 28.25
+        },
+        {
+          "humidity": 55.19,
+          "wind_speed": 2.18,
+          "observation_date": "2025-05-13",
+          "temperature_mean": 10.09,
+          "temperature_max": 17.73,
+          "temperature_min": 0,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 29.49
+        },
+        {
+          "humidity": 58.18,
+          "wind_speed": 1.51,
+          "observation_date": "2025-05-14",
+          "temperature_mean": 11.48,
+          "temperature_max": 18.43,
+          "temperature_min": 5.4,
+          "precipitation_mm": 0.15,
+          "solar_radiation": 22.26
+        },
+        {
+          "humidity": 49.63,
+          "wind_speed": 1.44,
+          "observation_date": "2025-05-15",
+          "temperature_mean": 13.81,
+          "temperature_max": 19.44,
+          "temperature_min": 7.68,
+          "precipitation_mm": 0,
+          "solar_radiation": 27.38
+        },
+        {
+          "humidity": 43.95,
+          "wind_speed": 1.54,
+          "observation_date": "2025-05-16",
+          "temperature_mean": 15.25,
+          "temperature_max": 21.41,
+          "temperature_min": 9.82,
+          "precipitation_mm": 0,
+          "solar_radiation": 29.2
+        },
+        {
+          "humidity": 42.52,
+          "wind_speed": 1.83,
+          "observation_date": "2025-05-17",
+          "temperature_mean": 16.19,
+          "temperature_max": 23,
+          "temperature_min": 7.83,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.13
+        },
+        {
+          "humidity": 67.14,
+          "wind_speed": 2.5,
+          "observation_date": "2025-05-18",
+          "temperature_mean": 10.15,
+          "temperature_max": 17.76,
+          "temperature_min": 3.83,
+          "precipitation_mm": 6.25,
+          "solar_radiation": 8.93
+        },
+        {
+          "humidity": 76.58,
+          "wind_speed": 2.87,
+          "observation_date": "2025-05-19",
+          "temperature_mean": 4.75,
+          "temperature_max": 8.63,
+          "temperature_min": 0.22,
+          "precipitation_mm": 9.01,
+          "solar_radiation": 22.37
+        },
+        {
+          "humidity": 53.16,
+          "wind_speed": 1.85,
+          "observation_date": "2025-05-20",
+          "temperature_mean": 6.84,
+          "temperature_max": 13.09,
+          "temperature_min": -0.51,
+          "precipitation_mm": 0,
+          "solar_radiation": 30.87
+        },
+        {
+          "humidity": 37.86,
+          "wind_speed": 1.79,
+          "observation_date": "2025-05-21",
+          "temperature_mean": 11.95,
+          "temperature_max": 17.58,
+          "temperature_min": 7.05,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.71
+        },
+        {
+          "humidity": 46.72,
+          "wind_speed": 1.96,
+          "observation_date": "2025-05-22",
+          "temperature_mean": 13.56,
+          "temperature_max": 20.63,
+          "temperature_min": 7.97,
+          "precipitation_mm": 0.01,
+          "solar_radiation": 28.95
+        },
+        {
+          "humidity": 75.29,
+          "wind_speed": 3.17,
+          "observation_date": "2025-05-23",
+          "temperature_mean": 10.16,
+          "temperature_max": 16.59,
+          "temperature_min": 6.11,
+          "precipitation_mm": 6.22,
+          "solar_radiation": 14.71
+        },
+        {
+          "humidity": 64.97,
+          "wind_speed": 1.91,
+          "observation_date": "2025-05-24",
+          "temperature_mean": 9.17,
+          "temperature_max": 15.06,
+          "temperature_min": 3.74,
+          "precipitation_mm": 3.9,
+          "solar_radiation": 28.02
+        },
+        {
+          "humidity": 64.72,
+          "wind_speed": 1.24,
+          "observation_date": "2025-05-25",
+          "temperature_mean": 11.31,
+          "temperature_max": 17.78,
+          "temperature_min": 4.49,
+          "precipitation_mm": 0.04,
+          "solar_radiation": 26.96
+        },
+        {
+          "humidity": 83.5,
+          "wind_speed": 2.4,
+          "observation_date": "2025-05-26",
+          "temperature_mean": 7.93,
+          "temperature_max": 13.56,
+          "temperature_min": 3.59,
+          "precipitation_mm": 2.88,
+          "solar_radiation": 11.62
+        },
+        {
+          "humidity": 68.85,
+          "wind_speed": 2.49,
+          "observation_date": "2025-05-27",
+          "temperature_mean": 5.51,
+          "temperature_max": 10.68,
+          "temperature_min": 0.88,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 25.11
+        },
+        {
+          "humidity": 52.11,
+          "wind_speed": 1.72,
+          "observation_date": "2025-05-28",
+          "temperature_mean": 7.47,
+          "temperature_max": 14.08,
+          "temperature_min": 1.62,
+          "precipitation_mm": 0.19,
+          "solar_radiation": 23.74
+        },
+        {
+          "humidity": 52.5,
+          "wind_speed": 1.69,
+          "observation_date": "2025-05-29",
+          "temperature_mean": 8.7,
+          "temperature_max": 14.62,
+          "temperature_min": 2.75,
+          "precipitation_mm": 0,
+          "solar_radiation": 30.02
+        },
+        {
+          "humidity": 57.52,
+          "wind_speed": 1.89,
+          "observation_date": "2025-05-30",
+          "temperature_mean": 8.32,
+          "temperature_max": 13.23,
+          "temperature_min": 3.56,
+          "precipitation_mm": 0.28,
+          "solar_radiation": 24.55
+        },
+        {
+          "humidity": 61.91,
+          "wind_speed": 1.47,
+          "observation_date": "2025-05-31",
+          "temperature_mean": 7.13,
+          "temperature_max": 11.96,
+          "temperature_min": 3.62,
+          "precipitation_mm": 0.48,
+          "solar_radiation": 17.98
+        },
+        {
+          "humidity": 78.04,
+          "wind_speed": 0.92,
+          "observation_date": "2025-06-01",
+          "temperature_mean": 6.59,
+          "temperature_max": 11.53,
+          "temperature_min": 3.65,
+          "precipitation_mm": 1.09,
+          "solar_radiation": 9.25
+        },
+        {
+          "humidity": 76.21,
+          "wind_speed": 1.46,
+          "observation_date": "2025-06-02",
+          "temperature_mean": 7.52,
+          "temperature_max": 10.84,
+          "temperature_min": 4.48,
+          "precipitation_mm": 0.95,
+          "solar_radiation": 22.7
+        },
+        {
+          "humidity": 70.4,
+          "wind_speed": 1.34,
+          "observation_date": "2025-06-03",
+          "temperature_mean": 8.82,
+          "temperature_max": 12.81,
+          "temperature_min": 5.21,
+          "precipitation_mm": 1.16,
+          "solar_radiation": 20.68
+        },
+        {
+          "humidity": 61.55,
+          "wind_speed": 0.92,
+          "observation_date": "2025-06-04",
+          "temperature_mean": 11.11,
+          "temperature_max": 16.53,
+          "temperature_min": 5.59,
+          "precipitation_mm": 13.03,
+          "solar_radiation": 22.55
+        },
+        {
+          "humidity": 50.32,
+          "wind_speed": 1.52,
+          "observation_date": "2025-06-05",
+          "temperature_mean": 13.73,
+          "temperature_max": 19.43,
+          "temperature_min": 6.67,
+          "precipitation_mm": 0.03,
+          "solar_radiation": 25.96
+        },
+        {
+          "humidity": 45.74,
+          "wind_speed": 1.59,
+          "observation_date": "2025-06-06",
+          "temperature_mean": 16.64,
+          "temperature_max": 22.8,
+          "temperature_min": 10.33,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.3
+        },
+        {
+          "humidity": 60.67,
+          "wind_speed": 1.89,
+          "observation_date": "2025-06-07",
+          "temperature_mean": 14.3,
+          "temperature_max": 19.01,
+          "temperature_min": 8.81,
+          "precipitation_mm": 0.44,
+          "solar_radiation": 18.85
+        },
+        {
+          "humidity": 76.14,
+          "wind_speed": 1.24,
+          "observation_date": "2025-06-08",
+          "temperature_mean": 11.41,
+          "temperature_max": 16.47,
+          "temperature_min": 6.64,
+          "precipitation_mm": 3.49,
+          "solar_radiation": 15.04
+        },
+        {
+          "humidity": 55.9,
+          "wind_speed": 1.49,
+          "observation_date": "2025-06-09",
+          "temperature_mean": 15.46,
+          "temperature_max": 22.42,
+          "temperature_min": 7.61,
+          "precipitation_mm": 0.08,
+          "solar_radiation": 26.67
+        },
+        {
+          "humidity": 74.52,
+          "wind_speed": 0.94,
+          "observation_date": "2025-06-10",
+          "temperature_mean": 13.15,
+          "temperature_max": 16.78,
+          "temperature_min": 8.34,
+          "precipitation_mm": 1.36,
+          "solar_radiation": 12.13
+        },
+        {
+          "humidity": 68.09,
+          "wind_speed": 1.56,
+          "observation_date": "2025-06-11",
+          "temperature_mean": 13.53,
+          "temperature_max": 19.76,
+          "temperature_min": 7.97,
+          "precipitation_mm": 0.81,
+          "solar_radiation": 23.68
+        },
+        {
+          "humidity": 59.47,
+          "wind_speed": 1.98,
+          "observation_date": "2025-06-12",
+          "temperature_mean": 14.43,
+          "temperature_max": 19.6,
+          "temperature_min": 8.16,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 27.39
+        },
+        {
+          "humidity": 65.01,
+          "wind_speed": 1.03,
+          "observation_date": "2025-06-13",
+          "temperature_mean": 12.92,
+          "temperature_max": 16.58,
+          "temperature_min": 8.65,
+          "precipitation_mm": 0.43,
+          "solar_radiation": 14.9
+        },
+        {
+          "humidity": 69.78,
+          "wind_speed": 0.98,
+          "observation_date": "2025-06-14",
+          "temperature_mean": 12.8,
+          "temperature_max": 16.11,
+          "temperature_min": 9.1,
+          "precipitation_mm": 2.88,
+          "solar_radiation": 14.5
+        },
+        {
+          "humidity": 68.3,
+          "wind_speed": 1.36,
+          "observation_date": "2025-06-15",
+          "temperature_mean": 12.87,
+          "temperature_max": 15.57,
+          "temperature_min": 10.03,
+          "precipitation_mm": 0.3,
+          "solar_radiation": 24.32
+        },
+        {
+          "humidity": 56.02,
+          "wind_speed": 1.86,
+          "observation_date": "2025-06-16",
+          "temperature_mean": 14.01,
+          "temperature_max": 18.21,
+          "temperature_min": 9.81,
+          "precipitation_mm": 0.9,
+          "solar_radiation": 26.66
+        },
+        {
+          "humidity": 48.32,
+          "wind_speed": 1.28,
+          "observation_date": "2025-06-17",
+          "temperature_mean": 15.45,
+          "temperature_max": 21.22,
+          "temperature_min": 9.02,
+          "precipitation_mm": 0,
+          "solar_radiation": 30.18
+        },
+        {
+          "humidity": 45.53,
+          "wind_speed": 1.47,
+          "observation_date": "2025-06-18",
+          "temperature_mean": 16.64,
+          "temperature_max": 22.05,
+          "temperature_min": 10.12,
+          "precipitation_mm": 0.01,
+          "solar_radiation": 28.73
+        },
+        {
+          "humidity": 50.11,
+          "wind_speed": 1.85,
+          "observation_date": "2025-06-19",
+          "temperature_mean": 17.74,
+          "temperature_max": 25.54,
+          "temperature_min": 11.61,
+          "precipitation_mm": 0.14,
+          "solar_radiation": 26.64
+        },
+        {
+          "humidity": 74.66,
+          "wind_speed": 2.01,
+          "observation_date": "2025-06-20",
+          "temperature_mean": 13.81,
+          "temperature_max": 19.71,
+          "temperature_min": 9.34,
+          "precipitation_mm": 1.69,
+          "solar_radiation": 11.36
+        },
+        {
+          "humidity": 49.78,
+          "wind_speed": 1,
+          "observation_date": "2025-06-21",
+          "temperature_mean": 15.28,
+          "temperature_max": 22.11,
+          "temperature_min": 8.55,
+          "precipitation_mm": 0.03,
+          "solar_radiation": 29.99
+        },
+        {
+          "humidity": 68.56,
+          "wind_speed": 1.63,
+          "observation_date": "2025-06-22",
+          "temperature_mean": 13.29,
+          "temperature_max": 19.08,
+          "temperature_min": 9.86,
+          "precipitation_mm": 1.45,
+          "solar_radiation": 19.79
+        },
+        {
+          "humidity": 57.84,
+          "wind_speed": 1.83,
+          "observation_date": "2025-06-23",
+          "temperature_mean": 14.05,
+          "temperature_max": 20.53,
+          "temperature_min": 6.95,
+          "precipitation_mm": 0.04,
+          "solar_radiation": 29.79
+        },
+        {
+          "humidity": 54,
+          "wind_speed": 0.94,
+          "observation_date": "2025-06-24",
+          "temperature_mean": 15.81,
+          "temperature_max": 21.86,
+          "temperature_min": 8.88,
+          "precipitation_mm": 0.08,
+          "solar_radiation": 29.04
+        },
+        {
+          "humidity": 50.92,
+          "wind_speed": 2.17,
+          "observation_date": "2025-06-25",
+          "temperature_mean": 17.26,
+          "temperature_max": 24.23,
+          "temperature_min": 10.78,
+          "precipitation_mm": 0.66,
+          "solar_radiation": 23.15
+        },
+        {
+          "humidity": 68.31,
+          "wind_speed": 2.1,
+          "observation_date": "2025-06-26",
+          "temperature_mean": 13.75,
+          "temperature_max": 18.4,
+          "temperature_min": 9.83,
+          "precipitation_mm": 2.56,
+          "solar_radiation": 23.04
+        },
+        {
+          "humidity": 62.45,
+          "wind_speed": 1.89,
+          "observation_date": "2025-06-27",
+          "temperature_mean": 12.2,
+          "temperature_max": 16.58,
+          "temperature_min": 7.72,
+          "precipitation_mm": 0.21,
+          "solar_radiation": 23.24
+        },
+        {
+          "humidity": 44.35,
+          "wind_speed": 1.63,
+          "observation_date": "2025-06-28",
+          "temperature_mean": 15.13,
+          "temperature_max": 21.58,
+          "temperature_min": 8.43,
+          "precipitation_mm": 0,
+          "solar_radiation": 30.88
+        },
+        {
+          "humidity": 47.55,
+          "wind_speed": 1.72,
+          "observation_date": "2025-06-29",
+          "temperature_mean": 14.8,
+          "temperature_max": 20.96,
+          "temperature_min": 9.08,
+          "precipitation_mm": 0,
+          "solar_radiation": 27.8
+        },
+        {
+          "humidity": 48.23,
+          "wind_speed": 2.29,
+          "observation_date": "2025-06-30",
+          "temperature_mean": 14.37,
+          "temperature_max": 20.65,
+          "temperature_min": 7.71,
+          "precipitation_mm": 0.01,
+          "solar_radiation": 28.26
+        },
+        {
+          "humidity": 50.88,
+          "wind_speed": 2,
+          "observation_date": "2025-07-01",
+          "temperature_mean": 14.36,
+          "temperature_max": 20.52,
+          "temperature_min": 7.74,
+          "precipitation_mm": 0.09,
+          "solar_radiation": 27.89
+        },
+        {
+          "humidity": 45.94,
+          "wind_speed": 2.05,
+          "observation_date": "2025-07-02",
+          "temperature_mean": 14.91,
+          "temperature_max": 20.87,
+          "temperature_min": 9.73,
+          "precipitation_mm": 0.3,
+          "solar_radiation": 28.24
+        },
+        {
+          "humidity": 43.67,
+          "wind_speed": 1.88,
+          "observation_date": "2025-07-03",
+          "temperature_mean": 16.02,
+          "temperature_max": 22.8,
+          "temperature_min": 9.45,
+          "precipitation_mm": 0,
+          "solar_radiation": 31.12
+        },
+        {
+          "humidity": 37.36,
+          "wind_speed": 2.12,
+          "observation_date": "2025-07-04",
+          "temperature_mean": 16.99,
+          "temperature_max": 23,
+          "temperature_min": 10.39,
+          "precipitation_mm": 0,
+          "solar_radiation": 30.95
+        },
+        {
+          "humidity": 37.21,
+          "wind_speed": 2.41,
+          "observation_date": "2025-07-05",
+          "temperature_mean": 18.89,
+          "temperature_max": 25.49,
+          "temperature_min": 13.09,
+          "precipitation_mm": 0,
+          "solar_radiation": 21.32
+        },
+        {
+          "humidity": 45.51,
+          "wind_speed": 2.4,
+          "observation_date": "2025-07-06",
+          "temperature_mean": 15.81,
+          "temperature_max": 21.3,
+          "temperature_min": 9.2,
+          "precipitation_mm": 0.05,
+          "solar_radiation": 30.41
+        },
+        {
+          "humidity": 50,
+          "wind_speed": 2.05,
+          "observation_date": "2025-07-07",
+          "temperature_mean": 14.73,
+          "temperature_max": 19.94,
+          "temperature_min": 9.49,
+          "precipitation_mm": 0.18,
+          "solar_radiation": 16.36
+        },
+        {
+          "humidity": 57.8,
+          "wind_speed": 1.55,
+          "observation_date": "2025-07-08",
+          "temperature_mean": 14.63,
+          "temperature_max": 20.69,
+          "temperature_min": 8.84,
+          "precipitation_mm": 0.49,
+          "solar_radiation": 28.24
+        },
+        {
+          "humidity": 68.54,
+          "wind_speed": 1.01,
+          "observation_date": "2025-07-09",
+          "temperature_mean": 12.39,
+          "temperature_max": 15.89,
+          "temperature_min": 8.5,
+          "precipitation_mm": 3.73,
+          "solar_radiation": 13.97
+        },
+        {
+          "humidity": 76.95,
+          "wind_speed": 1.34,
+          "observation_date": "2025-07-10",
+          "temperature_mean": 10.04,
+          "temperature_max": 16.47,
+          "temperature_min": 6.07,
+          "precipitation_mm": 1.29,
+          "solar_radiation": 7.19
+        },
+        {
+          "humidity": 63.43,
+          "wind_speed": 1.63,
+          "observation_date": "2025-07-11",
+          "temperature_mean": 9.86,
+          "temperature_max": 14.12,
+          "temperature_min": 5.03,
+          "precipitation_mm": 0.56,
+          "solar_radiation": 23.33
+        },
+        {
+          "humidity": 53.23,
+          "wind_speed": 1.36,
+          "observation_date": "2025-07-12",
+          "temperature_mean": 12.71,
+          "temperature_max": 19.25,
+          "temperature_min": 5.3,
+          "precipitation_mm": 0,
+          "solar_radiation": 29.67
+        },
+        {
+          "humidity": 46.72,
+          "wind_speed": 1.71,
+          "observation_date": "2025-07-13",
+          "temperature_mean": 15.9,
+          "temperature_max": 23.49,
+          "temperature_min": 7.44,
+          "precipitation_mm": 0,
+          "solar_radiation": 29.71
+        },
+        {
+          "humidity": 50.44,
+          "wind_speed": 1.39,
+          "observation_date": "2025-07-14",
+          "temperature_mean": 15.62,
+          "temperature_max": 20.31,
+          "temperature_min": 11.74,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 18.34
+        },
+        {
+          "humidity": 48.61,
+          "wind_speed": 1.04,
+          "observation_date": "2025-07-15",
+          "temperature_mean": 17.29,
+          "temperature_max": 22.37,
+          "temperature_min": 12.68,
+          "precipitation_mm": 0.05,
+          "solar_radiation": 21.66
+        },
+        {
+          "humidity": 55.2,
+          "wind_speed": 0.83,
+          "observation_date": "2025-07-16",
+          "temperature_mean": 15.97,
+          "temperature_max": 18.49,
+          "temperature_min": 12.24,
+          "precipitation_mm": 0.41,
+          "solar_radiation": 18.2
+        },
+        {
+          "humidity": 51.09,
+          "wind_speed": 1.22,
+          "observation_date": "2025-07-17",
+          "temperature_mean": 16.76,
+          "temperature_max": 22.23,
+          "temperature_min": 11.79,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 24.05
+        },
+        {
+          "humidity": 41.14,
+          "wind_speed": 1.12,
+          "observation_date": "2025-07-18",
+          "temperature_mean": 18.96,
+          "temperature_max": 25.57,
+          "temperature_min": 12.37,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.5
+        },
+        {
+          "humidity": 44.9,
+          "wind_speed": 1.43,
+          "observation_date": "2025-07-19",
+          "temperature_mean": 19.6,
+          "temperature_max": 26.36,
+          "temperature_min": 13.41,
+          "precipitation_mm": 0.04,
+          "solar_radiation": 25.38
+        },
+        {
+          "humidity": 53.63,
+          "wind_speed": 1.73,
+          "observation_date": "2025-07-20",
+          "temperature_mean": 18.65,
+          "temperature_max": 24.6,
+          "temperature_min": 11.79,
+          "precipitation_mm": 0.06,
+          "solar_radiation": 27.27
+        },
+        {
+          "humidity": 45.8,
+          "wind_speed": 2.13,
+          "observation_date": "2025-07-21",
+          "temperature_mean": 18.06,
+          "temperature_max": 23.65,
+          "temperature_min": 11.45,
+          "precipitation_mm": 0,
+          "solar_radiation": 27.43
+        },
+        {
+          "humidity": 33.29,
+          "wind_speed": 1.61,
+          "observation_date": "2025-07-22",
+          "temperature_mean": 17.94,
+          "temperature_max": 24.99,
+          "temperature_min": 11.68,
+          "precipitation_mm": 0,
+          "solar_radiation": 30.13
+        },
+        {
+          "humidity": 34.94,
+          "wind_speed": 1.64,
+          "observation_date": "2025-07-23",
+          "temperature_mean": 19.61,
+          "temperature_max": 26.87,
+          "temperature_min": 12.8,
+          "precipitation_mm": 0.06,
+          "solar_radiation": 28.49
+        },
+        {
+          "humidity": 33.02,
+          "wind_speed": 2.18,
+          "observation_date": "2025-07-24",
+          "temperature_mean": 18.92,
+          "temperature_max": 24.7,
+          "temperature_min": 12.45,
+          "precipitation_mm": 0.08,
+          "solar_radiation": 28.2
+        },
+        {
+          "humidity": 34.24,
+          "wind_speed": 1.61,
+          "observation_date": "2025-07-25",
+          "temperature_mean": 18.88,
+          "temperature_max": 25.67,
+          "temperature_min": 12.76,
+          "precipitation_mm": 0,
+          "solar_radiation": 28.45
+        },
+        {
+          "humidity": 31.11,
+          "wind_speed": 1.02,
+          "observation_date": "2025-07-26",
+          "temperature_mean": 20.09,
+          "temperature_max": 26.39,
+          "temperature_min": 14.02,
+          "precipitation_mm": 0,
+          "solar_radiation": 25.99
+        },
+        {
+          "humidity": 42.71,
+          "wind_speed": 2.37,
+          "observation_date": "2025-07-27",
+          "temperature_mean": 18.96,
+          "temperature_max": 25.93,
+          "temperature_min": 11.39,
+          "precipitation_mm": 0.13,
+          "solar_radiation": 23.24
+        },
+        {
+          "humidity": 63.53,
+          "wind_speed": 1.4,
+          "observation_date": "2025-07-28",
+          "temperature_mean": 14.89,
+          "temperature_max": 20.42,
+          "temperature_min": 9.7,
+          "precipitation_mm": 0.11,
+          "solar_radiation": 21.58
+        },
+        {
+          "humidity": 55.14,
+          "wind_speed": 1.32,
+          "observation_date": "2025-07-29",
+          "temperature_mean": 16.48,
+          "temperature_max": 21.98,
+          "temperature_min": 10.95,
+          "precipitation_mm": 0.82,
+          "solar_radiation": 25.32
+        },
+        {
+          "humidity": 58.96,
+          "wind_speed": 1.72,
+          "observation_date": "2025-07-30",
+          "temperature_mean": 14.86,
+          "temperature_max": 20.5,
+          "temperature_min": 10.6,
+          "precipitation_mm": 0.23,
+          "solar_radiation": 17.57
+        },
+        {
+          "humidity": 65.66,
+          "wind_speed": 1.42,
+          "observation_date": "2025-07-31",
+          "temperature_mean": 12.95,
+          "temperature_max": 17.62,
+          "temperature_min": 9.12,
+          "precipitation_mm": 7.94,
+          "solar_radiation": 21.1
+        },
+        {
+          "humidity": 60.15,
+          "wind_speed": 1.67,
+          "observation_date": "2025-08-01",
+          "temperature_mean": 13.93,
+          "temperature_max": 18.82,
+          "temperature_min": 8.45,
+          "precipitation_mm": 0.24,
+          "solar_radiation": 20.96
+        },
+        {
+          "humidity": 67.08,
+          "wind_speed": 2.26,
+          "observation_date": "2025-08-02",
+          "temperature_mean": 12.04,
+          "temperature_max": 16.82,
+          "temperature_min": 8.02,
+          "precipitation_mm": 3.46,
+          "solar_radiation": 19.9
+        },
+        {
+          "humidity": 64.05,
+          "wind_speed": 1.53,
+          "observation_date": "2025-08-03",
+          "temperature_mean": 12.74,
+          "temperature_max": 17.87,
+          "temperature_min": 8.46,
+          "precipitation_mm": 3.2,
+          "solar_radiation": 22.79
+        },
+        {
+          "humidity": 65.79,
+          "wind_speed": 1.66,
+          "observation_date": "2025-08-04",
+          "temperature_mean": 12.54,
+          "temperature_max": 18.12,
+          "temperature_min": 7.57,
+          "precipitation_mm": 0.65,
+          "solar_radiation": 19.98
+        },
+        {
+          "humidity": 60.17,
+          "wind_speed": 1.94,
+          "observation_date": "2025-08-05",
+          "temperature_mean": 11.64,
+          "temperature_max": 16.41,
+          "temperature_min": 6.5,
+          "precipitation_mm": 0.06,
+          "solar_radiation": 25.44
+        },
+        {
+          "humidity": 48.44,
+          "wind_speed": 1.47,
+          "observation_date": "2025-08-06",
+          "temperature_mean": 13.37,
+          "temperature_max": 19.98,
+          "temperature_min": 7.08,
+          "precipitation_mm": 0,
+          "solar_radiation": 27.87
+        },
+        {
+          "humidity": 40.9,
+          "wind_speed": 1.43,
+          "observation_date": "2025-08-07",
+          "temperature_mean": 15.95,
+          "temperature_max": 22.48,
+          "temperature_min": 10.91,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.12
+        },
+        {
+          "humidity": 52.32,
+          "wind_speed": 1.86,
+          "observation_date": "2025-08-08",
+          "temperature_mean": 13.92,
+          "temperature_max": 19.61,
+          "temperature_min": 8.89,
+          "precipitation_mm": 0.21,
+          "solar_radiation": 24.9
+        },
+        {
+          "humidity": 38.81,
+          "wind_speed": 2.29,
+          "observation_date": "2025-08-09",
+          "temperature_mean": 17.2,
+          "temperature_max": 23.81,
+          "temperature_min": 11.92,
+          "precipitation_mm": 0,
+          "solar_radiation": 26.7
+        },
+        {
+          "humidity": 41.3,
+          "wind_speed": 1.81,
+          "observation_date": "2025-08-10",
+          "temperature_mean": 17.42,
+          "temperature_max": 23.97,
+          "temperature_min": 12.1,
+          "precipitation_mm": 0,
+          "solar_radiation": 26.31
+        },
+        {
+          "humidity": 47.37,
+          "wind_speed": 1.74,
+          "observation_date": "2025-08-11",
+          "temperature_mean": 17.1,
+          "temperature_max": 24.05,
+          "temperature_min": 11.96,
+          "precipitation_mm": 0,
+          "solar_radiation": 26.04
+        },
+        {
+          "humidity": 46.74,
+          "wind_speed": 2.24,
+          "observation_date": "2025-08-12",
+          "temperature_mean": 17.99,
+          "temperature_max": 24.16,
+          "temperature_min": 11.57,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.51
+        },
+        {
+          "humidity": 49.96,
+          "wind_speed": 1.76,
+          "observation_date": "2025-08-13",
+          "temperature_mean": 16.8,
+          "temperature_max": 24.62,
+          "temperature_min": 9.82,
+          "precipitation_mm": 0.04,
+          "solar_radiation": 25.24
+        },
+        {
+          "humidity": 55.17,
+          "wind_speed": 1.56,
+          "observation_date": "2025-08-14",
+          "temperature_mean": 15.4,
+          "temperature_max": 18.91,
+          "temperature_min": 10.51,
+          "precipitation_mm": 1.52,
+          "solar_radiation": 13.7
+        },
+        {
+          "humidity": 59.43,
+          "wind_speed": 1.93,
+          "observation_date": "2025-08-15",
+          "temperature_mean": 13.31,
+          "temperature_max": 18.79,
+          "temperature_min": 7.79,
+          "precipitation_mm": 1.16,
+          "solar_radiation": 21.06
+        },
+        {
+          "humidity": 54.44,
+          "wind_speed": 1.63,
+          "observation_date": "2025-08-16",
+          "temperature_mean": 14.38,
+          "temperature_max": 20.39,
+          "temperature_min": 7.19,
+          "precipitation_mm": 0.35,
+          "solar_radiation": 24.74
+        },
+        {
+          "humidity": 65.29,
+          "wind_speed": 2.18,
+          "observation_date": "2025-08-17",
+          "temperature_mean": 11.91,
+          "temperature_max": 17.58,
+          "temperature_min": 6.58,
+          "precipitation_mm": 0.48,
+          "solar_radiation": 21.17
+        },
+        {
+          "humidity": 74,
+          "wind_speed": 2.07,
+          "observation_date": "2025-08-18",
+          "temperature_mean": 9.02,
+          "temperature_max": 12.42,
+          "temperature_min": 6.47,
+          "precipitation_mm": 3.74,
+          "solar_radiation": 18.87
+        },
+        {
+          "humidity": 52.13,
+          "wind_speed": 1.46,
+          "observation_date": "2025-08-19",
+          "temperature_mean": 11.8,
+          "temperature_max": 18.61,
+          "temperature_min": 5.55,
+          "precipitation_mm": 0,
+          "solar_radiation": 25.43
+        },
+        {
+          "humidity": 45.74,
+          "wind_speed": 2.22,
+          "observation_date": "2025-08-20",
+          "temperature_mean": 14.42,
+          "temperature_max": 21.28,
+          "temperature_min": 7.99,
+          "precipitation_mm": 0.67,
+          "solar_radiation": 25.22
+        },
+        {
+          "humidity": 47.25,
+          "wind_speed": 2.26,
+          "observation_date": "2025-08-21",
+          "temperature_mean": 13.24,
+          "temperature_max": 18.2,
+          "temperature_min": 9.3,
+          "precipitation_mm": 1.28,
+          "solar_radiation": 21.49
+        },
+        {
+          "humidity": 40,
+          "wind_speed": 1.58,
+          "observation_date": "2025-08-22",
+          "temperature_mean": 14.7,
+          "temperature_max": 21.07,
+          "temperature_min": 9.04,
+          "precipitation_mm": 0,
+          "solar_radiation": 24.06
+        },
+        {
+          "humidity": 48.28,
+          "wind_speed": 1.2,
+          "observation_date": "2025-08-23",
+          "temperature_mean": 13.59,
+          "temperature_max": 18.92,
+          "temperature_min": 7.05,
+          "precipitation_mm": 0.01,
+          "solar_radiation": 18.43
+        },
+        {
+          "humidity": 67.56,
+          "wind_speed": 1.6,
+          "observation_date": "2025-08-24",
+          "temperature_mean": 10.11,
+          "temperature_max": 14.9,
+          "temperature_min": 5.92,
+          "precipitation_mm": 0.36,
+          "solar_radiation": 20.46
+        },
+        {
+          "humidity": 50.61,
+          "wind_speed": 1.62,
+          "observation_date": "2025-08-25",
+          "temperature_mean": 11.33,
+          "temperature_max": 19,
+          "temperature_min": 4.99,
+          "precipitation_mm": 0.82,
+          "solar_radiation": 24.94
+        },
+        {
+          "humidity": 39.55,
+          "wind_speed": 1.85,
+          "observation_date": "2025-08-26",
+          "temperature_mean": 13.91,
+          "temperature_max": 21.11,
+          "temperature_min": 7.79,
+          "precipitation_mm": 0,
+          "solar_radiation": 25.1
+        },
+        {
+          "humidity": 33.85,
+          "wind_speed": 1.84,
+          "observation_date": "2025-08-27",
+          "temperature_mean": 14.43,
+          "temperature_max": 22.28,
+          "temperature_min": 8.48,
+          "precipitation_mm": 0,
+          "solar_radiation": 25.41
+        },
+        {
+          "humidity": 29.75,
+          "wind_speed": 1.74,
+          "observation_date": "2025-08-28",
+          "temperature_mean": 15.9,
+          "temperature_max": 23.17,
+          "temperature_min": 9.28,
+          "precipitation_mm": 0,
+          "solar_radiation": 25.24
+        },
+        {
+          "humidity": 24.45,
+          "wind_speed": 1.75,
+          "observation_date": "2025-08-29",
+          "temperature_mean": 16.37,
+          "temperature_max": 23.3,
+          "temperature_min": 11.18,
+          "precipitation_mm": 0,
+          "solar_radiation": 24.82
+        },
+        {
+          "humidity": 30.92,
+          "wind_speed": 2.97,
+          "observation_date": "2025-08-30",
+          "temperature_mean": 15.14,
+          "temperature_max": 21.8,
+          "temperature_min": 6.5,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.82
+        },
+        {
+          "humidity": 41.13,
+          "wind_speed": 3.11,
+          "observation_date": "2025-08-31",
+          "temperature_mean": 6.9,
+          "temperature_max": 13,
+          "temperature_min": 1.12,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.82
+        },
+        {
+          "humidity": 28.84,
+          "wind_speed": 1.8,
+          "observation_date": "2025-09-01",
+          "temperature_mean": 9.61,
+          "temperature_max": 17.16,
+          "temperature_min": 2.28,
+          "precipitation_mm": 0,
+          "solar_radiation": 24.47
+        },
+        {
+          "humidity": 43.12,
+          "wind_speed": 2.38,
+          "observation_date": "2025-09-02",
+          "temperature_mean": 10.03,
+          "temperature_max": 17.38,
+          "temperature_min": 3.61,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.56
+        },
+        {
+          "humidity": 52.09,
+          "wind_speed": 2.42,
+          "observation_date": "2025-09-03",
+          "temperature_mean": 6.44,
+          "temperature_max": 13.43,
+          "temperature_min": 0.87,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.56
+        },
+        {
+          "humidity": 26.8,
+          "wind_speed": 1.51,
+          "observation_date": "2025-09-04",
+          "temperature_mean": 11.22,
+          "temperature_max": 20.82,
+          "temperature_min": 2.38,
+          "precipitation_mm": 0,
+          "solar_radiation": 24.25
+        },
+        {
+          "humidity": 36.08,
+          "wind_speed": 1.93,
+          "observation_date": "2025-09-05",
+          "temperature_mean": 13.21,
+          "temperature_max": 23.1,
+          "temperature_min": 4.68,
+          "precipitation_mm": 0,
+          "solar_radiation": 23.05
+        },
+        {
+          "humidity": 30.41,
+          "wind_speed": 1.97,
+          "observation_date": "2025-09-06",
+          "temperature_mean": 14.79,
+          "temperature_max": 20.79,
+          "temperature_min": 8.66,
+          "precipitation_mm": 0,
+          "solar_radiation": 20.12
+        },
+        {
+          "humidity": 34.47,
+          "wind_speed": 1.44,
+          "observation_date": "2025-09-07",
+          "temperature_mean": 15.4,
+          "temperature_max": 21.96,
+          "temperature_min": 9.22,
+          "precipitation_mm": 0,
+          "solar_radiation": 19.55
+        },
+        {
+          "humidity": 45.67,
+          "wind_speed": 2.11,
+          "observation_date": "2025-09-08",
+          "temperature_mean": 13.62,
+          "temperature_max": 20.62,
+          "temperature_min": 7.9,
+          "precipitation_mm": 0.49,
+          "solar_radiation": 18.59
+        },
+        {
+          "humidity": 66.41,
+          "wind_speed": 1.76,
+          "observation_date": "2025-09-09",
+          "temperature_mean": 10.18,
+          "temperature_max": 15.64,
+          "temperature_min": 5.94,
+          "precipitation_mm": 0.08,
+          "solar_radiation": 18.37
+        },
+        {
+          "humidity": 62.15,
+          "wind_speed": 2.28,
+          "observation_date": "2025-09-10",
+          "temperature_mean": 10.51,
+          "temperature_max": 16.91,
+          "temperature_min": 5.3,
+          "precipitation_mm": 0.19,
+          "solar_radiation": 16.52
+        },
+        {
+          "humidity": 56.83,
+          "wind_speed": 2.33,
+          "observation_date": "2025-09-11",
+          "temperature_mean": 9.61,
+          "temperature_max": 16.23,
+          "temperature_min": 4.94,
+          "precipitation_mm": 0.06,
+          "solar_radiation": 20.31
+        },
+        {
+          "humidity": 38.88,
+          "wind_speed": 1.7,
+          "observation_date": "2025-09-12",
+          "temperature_mean": 12.15,
+          "temperature_max": 19.9,
+          "temperature_min": 5.34,
+          "precipitation_mm": 0,
+          "solar_radiation": 20.65
+        },
+        {
+          "humidity": 40.42,
+          "wind_speed": 2.55,
+          "observation_date": "2025-09-13",
+          "temperature_mean": 12.34,
+          "temperature_max": 19.73,
+          "temperature_min": 4.9,
+          "precipitation_mm": 0.03,
+          "solar_radiation": 18.03
+        },
+        {
+          "humidity": 56.57,
+          "wind_speed": 2.4,
+          "observation_date": "2025-09-14",
+          "temperature_mean": 9.35,
+          "temperature_max": 15.2,
+          "temperature_min": 5.27,
+          "precipitation_mm": 0.1,
+          "solar_radiation": 20.05
+        },
+        {
+          "humidity": 55.45,
+          "wind_speed": 1.75,
+          "observation_date": "2025-09-15",
+          "temperature_mean": 10.94,
+          "temperature_max": 17.84,
+          "temperature_min": 5.58,
+          "precipitation_mm": 0.01,
+          "solar_radiation": 19.66
+        },
+        {
+          "humidity": 80.09,
+          "wind_speed": 1.28,
+          "observation_date": "2025-09-16",
+          "temperature_mean": 7.31,
+          "temperature_max": 11.14,
+          "temperature_min": 3.98,
+          "precipitation_mm": 5.76,
+          "solar_radiation": 8.55
+        },
+        {
+          "humidity": 78.93,
+          "wind_speed": 1.61,
+          "observation_date": "2025-09-17",
+          "temperature_mean": 6.87,
+          "temperature_max": 11.57,
+          "temperature_min": 3.37,
+          "precipitation_mm": 13.23,
+          "solar_radiation": 13.31
+        },
+        {
+          "humidity": 79.15,
+          "wind_speed": 1.44,
+          "observation_date": "2025-09-18",
+          "temperature_mean": 5.5,
+          "temperature_max": 9.35,
+          "temperature_min": 2.49,
+          "precipitation_mm": 2.65,
+          "solar_radiation": 3.98
+        },
+        {
+          "humidity": 75.97,
+          "wind_speed": 1.83,
+          "observation_date": "2025-09-19",
+          "temperature_mean": 4.36,
+          "temperature_max": 8.93,
+          "temperature_min": 0.26,
+          "precipitation_mm": 2.51,
+          "solar_radiation": 15.38
+        },
+        {
+          "humidity": 59.43,
+          "wind_speed": 1.95,
+          "observation_date": "2025-09-20",
+          "temperature_mean": 4.93,
+          "temperature_max": 11.55,
+          "temperature_min": 0.29,
+          "precipitation_mm": 0,
+          "solar_radiation": 20.06
+        },
+        {
+          "humidity": 33.08,
+          "wind_speed": 1.33,
+          "observation_date": "2025-09-21",
+          "temperature_mean": 7.93,
+          "temperature_max": 16.62,
+          "temperature_min": 0.04,
+          "precipitation_mm": 0,
+          "solar_radiation": 20.56
+        },
+        {
+          "humidity": 43.99,
+          "wind_speed": 2.09,
+          "observation_date": "2025-09-22",
+          "temperature_mean": 10.61,
+          "temperature_max": 17.8,
+          "temperature_min": 3.47,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 15.41
+        },
+        {
+          "humidity": 83.39,
+          "wind_speed": 2.78,
+          "observation_date": "2025-09-23",
+          "temperature_mean": 4.64,
+          "temperature_max": 9.15,
+          "temperature_min": 0.12,
+          "precipitation_mm": 10.67,
+          "solar_radiation": 4.18
+        },
+        {
+          "humidity": 73,
+          "wind_speed": 3.07,
+          "observation_date": "2025-09-24",
+          "temperature_mean": 2.94,
+          "temperature_max": 8.37,
+          "temperature_min": -0.89,
+          "precipitation_mm": 3.24,
+          "solar_radiation": 18.55
+        },
+        {
+          "humidity": 48.66,
+          "wind_speed": 1.98,
+          "observation_date": "2025-09-25",
+          "temperature_mean": 7.23,
+          "temperature_max": 16.23,
+          "temperature_min": -1.56,
+          "precipitation_mm": 0,
+          "solar_radiation": 19.47
+        },
+        {
+          "humidity": 63.72,
+          "wind_speed": 1.93,
+          "observation_date": "2025-09-26",
+          "temperature_mean": 6.24,
+          "temperature_max": 12.05,
+          "temperature_min": 2.26,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 11.84
+        },
+        {
+          "humidity": 61.76,
+          "wind_speed": 1.72,
+          "observation_date": "2025-09-27",
+          "temperature_mean": 8.24,
+          "temperature_max": 12.92,
+          "temperature_min": 3.98,
+          "precipitation_mm": 0.02,
+          "solar_radiation": 16.1
+        },
+        {
+          "humidity": 57.79,
+          "wind_speed": 1.61,
+          "observation_date": "2025-09-28",
+          "temperature_mean": 9.29,
+          "temperature_max": 16.18,
+          "temperature_min": 3.88,
+          "precipitation_mm": 0,
+          "solar_radiation": 17.21
+        },
+        {
+          "humidity": 58.11,
+          "wind_speed": 1.46,
+          "observation_date": "2025-09-29",
+          "temperature_mean": 9.09,
+          "temperature_max": 16.2,
+          "temperature_min": 3.35,
+          "precipitation_mm": 0.01,
+          "solar_radiation": 16.27
+        },
+        {
+          "humidity": 70.98,
+          "wind_speed": 1.65,
+          "observation_date": "2025-09-30",
+          "temperature_mean": 6.73,
+          "temperature_max": 11.2,
+          "temperature_min": 3.21,
+          "precipitation_mm": 0.05,
+          "solar_radiation": 13.39
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:48:14+00:00"
+    },
+    "soilgrids": {
+      "status": "ready",
+      "dataset": "ISRIC SoilGrids 2.0",
+      "resolutionMetres": 250,
+      "units": "g/kg",
+      "method": "Area-weighted overlap with valid cells on the native grid",
+      "limitations": "Model estimate. Pixel range describes variability and does not represent prediction uncertainty.",
+      "urls": [
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fsand.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=sand_0-5cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fsilt.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=silt_0-5cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fclay.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=clay_0-5cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fsand.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=sand_5-15cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fsilt.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=silt_5-15cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fclay.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=clay_5-15cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fsand.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=sand_15-30cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fsilt.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=silt_15-30cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29",
+        "https://maps.isric.org/mapserv?map=%2Fmap%2Fclay.map&SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=clay_15-30cm_mean&FORMAT=GEOTIFF_INT16&SUBSETTINGCRS=http%3A%2F%2Fwww.opengis.net%2Fdef%2Fcrs%2FEPSG%2F0%2F4326&SUBSET=Long%2876.68600000%2C76.71600000%29&SUBSET=Lat%2843.24100000%2C43.25600000%29"
+      ],
+      "data": [
+        {
+          "depthCm": [
+            0,
+            5
+          ],
+          "areaCoverageFraction": 0.94505,
+          "validPixels": 19,
+          "intersectingPixels": 20,
+          "mean": {
+            "sand": 256.01,
+            "silt": 440.59,
+            "clay": 303.1
+          },
+          "pixelRange": {
+            "sand": [
+              250.0,
+              262.0
+            ],
+            "silt": [
+              431.0,
+              449.0
+            ],
+            "clay": [
+              295.0,
+              316.0
+            ]
+          }
+        },
+        {
+          "depthCm": [
+            5,
+            15
+          ],
+          "areaCoverageFraction": 0.94505,
+          "validPixels": 19,
+          "intersectingPixels": 20,
+          "mean": {
+            "sand": 252.46,
+            "silt": 445.82,
+            "clay": 301.8
+          },
+          "pixelRange": {
+            "sand": [
+              246.0,
+              256.0
+            ],
+            "silt": [
+              437.0,
+              454.0
+            ],
+            "clay": [
+              295.0,
+              314.0
+            ]
+          }
+        },
+        {
+          "depthCm": [
+            15,
+            30
+          ],
+          "areaCoverageFraction": 0.94505,
+          "validPixels": 19,
+          "intersectingPixels": 20,
+          "mean": {
+            "sand": 245.97,
+            "silt": 448.59,
+            "clay": 305.48
+          },
+          "pixelRange": {
+            "sand": [
+              242.0,
+              255.0
+            ],
+            "silt": [
+              443.0,
+              457.0
+            ],
+            "clay": [
+              299.0,
+              313.0
+            ]
+          }
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:36:47+00:00"
+    },
+    "imerg-power": {
+      "status": "ready",
+      "method": "Field centroid sampled on the source grid",
+      "timeStandard": "UTC",
+      "resolution": {
+        "IMERG_PRECTOT": "0.1° × 0.1°"
+      },
+      "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=IMERG_PRECTOT&community=AG&longitude=76.701&latitude=43.2485&start=20250501&end=20250930&format=JSON&time-standard=UTC",
+      "upstream": {
+        "title": "NASA/POWER Source Native Resolution Daily Data",
+        "api": {
+          "version": "v2.10.3",
+          "name": "POWER Daily API"
+        },
+        "sources": [
+          "IMERG"
+        ],
+        "fill_value": -999.0,
+        "time_standard": "UTC",
+        "start": "20250501",
+        "end": "20250930"
+      },
+      "units": {
+        "IMERG_PRECTOT": "mm/day"
+      },
+      "coverageDays": {
+        "IMERG_PRECTOT": 153
+      },
+      "data": [
+        {
+          "date": "2025-05-01",
+          "IMERG_PRECTOT": 3.83
+        },
+        {
+          "date": "2025-05-02",
+          "IMERG_PRECTOT": 9.89
+        },
+        {
+          "date": "2025-05-03",
+          "IMERG_PRECTOT": 0.08
+        },
+        {
+          "date": "2025-05-04",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-05-05",
+          "IMERG_PRECTOT": 0.6
+        },
+        {
+          "date": "2025-05-06",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-05-07",
+          "IMERG_PRECTOT": 1.29
+        },
+        {
+          "date": "2025-05-08",
+          "IMERG_PRECTOT": 1.14
+        },
+        {
+          "date": "2025-05-09",
+          "IMERG_PRECTOT": 4.5
+        },
+        {
+          "date": "2025-05-10",
+          "IMERG_PRECTOT": 1.59
+        },
+        {
+          "date": "2025-05-11",
+          "IMERG_PRECTOT": 10.13
+        },
+        {
+          "date": "2025-05-12",
+          "IMERG_PRECTOT": 0.03
+        },
+        {
+          "date": "2025-05-13",
+          "IMERG_PRECTOT": 2.16
+        },
+        {
+          "date": "2025-05-14",
+          "IMERG_PRECTOT": 3.33
+        },
+        {
+          "date": "2025-05-15",
+          "IMERG_PRECTOT": 0.66
+        },
+        {
+          "date": "2025-05-16",
+          "IMERG_PRECTOT": 0.76
+        },
+        {
+          "date": "2025-05-17",
+          "IMERG_PRECTOT": 0.56
+        },
+        {
+          "date": "2025-05-18",
+          "IMERG_PRECTOT": 2.67
+        },
+        {
+          "date": "2025-05-19",
+          "IMERG_PRECTOT": 0.08
+        },
+        {
+          "date": "2025-05-20",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-05-21",
+          "IMERG_PRECTOT": 0.4
+        },
+        {
+          "date": "2025-05-22",
+          "IMERG_PRECTOT": 1.74
+        },
+        {
+          "date": "2025-05-23",
+          "IMERG_PRECTOT": 11.77
+        },
+        {
+          "date": "2025-05-24",
+          "IMERG_PRECTOT": 0.21
+        },
+        {
+          "date": "2025-05-25",
+          "IMERG_PRECTOT": 2.3
+        },
+        {
+          "date": "2025-05-26",
+          "IMERG_PRECTOT": 10.65
+        },
+        {
+          "date": "2025-05-27",
+          "IMERG_PRECTOT": 0.52
+        },
+        {
+          "date": "2025-05-28",
+          "IMERG_PRECTOT": 2.16
+        },
+        {
+          "date": "2025-05-29",
+          "IMERG_PRECTOT": 2.95
+        },
+        {
+          "date": "2025-05-30",
+          "IMERG_PRECTOT": 1.26
+        },
+        {
+          "date": "2025-05-31",
+          "IMERG_PRECTOT": 1.1
+        },
+        {
+          "date": "2025-06-01",
+          "IMERG_PRECTOT": 2.51
+        },
+        {
+          "date": "2025-06-02",
+          "IMERG_PRECTOT": 1.02
+        },
+        {
+          "date": "2025-06-03",
+          "IMERG_PRECTOT": 0.96
+        },
+        {
+          "date": "2025-06-04",
+          "IMERG_PRECTOT": 1.07
+        },
+        {
+          "date": "2025-06-05",
+          "IMERG_PRECTOT": 0.01
+        },
+        {
+          "date": "2025-06-06",
+          "IMERG_PRECTOT": 0.09
+        },
+        {
+          "date": "2025-06-07",
+          "IMERG_PRECTOT": 2.68
+        },
+        {
+          "date": "2025-06-08",
+          "IMERG_PRECTOT": 2.7
+        },
+        {
+          "date": "2025-06-09",
+          "IMERG_PRECTOT": 1.44
+        },
+        {
+          "date": "2025-06-10",
+          "IMERG_PRECTOT": 3.21
+        },
+        {
+          "date": "2025-06-11",
+          "IMERG_PRECTOT": 0.88
+        },
+        {
+          "date": "2025-06-12",
+          "IMERG_PRECTOT": 0.34
+        },
+        {
+          "date": "2025-06-13",
+          "IMERG_PRECTOT": 0.74
+        },
+        {
+          "date": "2025-06-14",
+          "IMERG_PRECTOT": 0.66
+        },
+        {
+          "date": "2025-06-15",
+          "IMERG_PRECTOT": 0.08
+        },
+        {
+          "date": "2025-06-16",
+          "IMERG_PRECTOT": 0.01
+        },
+        {
+          "date": "2025-06-17",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-06-18",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-06-19",
+          "IMERG_PRECTOT": 1.22
+        },
+        {
+          "date": "2025-06-20",
+          "IMERG_PRECTOT": 5.2
+        },
+        {
+          "date": "2025-06-21",
+          "IMERG_PRECTOT": 0.19
+        },
+        {
+          "date": "2025-06-22",
+          "IMERG_PRECTOT": 5.07
+        },
+        {
+          "date": "2025-06-23",
+          "IMERG_PRECTOT": 0.32
+        },
+        {
+          "date": "2025-06-24",
+          "IMERG_PRECTOT": 0.09
+        },
+        {
+          "date": "2025-06-25",
+          "IMERG_PRECTOT": 0.6
+        },
+        {
+          "date": "2025-06-26",
+          "IMERG_PRECTOT": 4.43
+        },
+        {
+          "date": "2025-06-27",
+          "IMERG_PRECTOT": 0.11
+        },
+        {
+          "date": "2025-06-28",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-06-29",
+          "IMERG_PRECTOT": 0.83
+        },
+        {
+          "date": "2025-06-30",
+          "IMERG_PRECTOT": 0.85
+        },
+        {
+          "date": "2025-07-01",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-07-02",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-07-03",
+          "IMERG_PRECTOT": 0.12
+        },
+        {
+          "date": "2025-07-04",
+          "IMERG_PRECTOT": 0.11
+        },
+        {
+          "date": "2025-07-05",
+          "IMERG_PRECTOT": 0.63
+        },
+        {
+          "date": "2025-07-06",
+          "IMERG_PRECTOT": 0.21
+        },
+        {
+          "date": "2025-07-07",
+          "IMERG_PRECTOT": 0.98
+        },
+        {
+          "date": "2025-07-08",
+          "IMERG_PRECTOT": 0.12
+        },
+        {
+          "date": "2025-07-09",
+          "IMERG_PRECTOT": 0.07
+        },
+        {
+          "date": "2025-07-10",
+          "IMERG_PRECTOT": 1.49
+        },
+        {
+          "date": "2025-07-11",
+          "IMERG_PRECTOT": 0.88
+        },
+        {
+          "date": "2025-07-12",
+          "IMERG_PRECTOT": 0.02
+        },
+        {
+          "date": "2025-07-13",
+          "IMERG_PRECTOT": 0.05
+        },
+        {
+          "date": "2025-07-14",
+          "IMERG_PRECTOT": 0.86
+        },
+        {
+          "date": "2025-07-15",
+          "IMERG_PRECTOT": 0.47
+        },
+        {
+          "date": "2025-07-16",
+          "IMERG_PRECTOT": 3.29
+        },
+        {
+          "date": "2025-07-17",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-07-18",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-07-19",
+          "IMERG_PRECTOT": 0.69
+        },
+        {
+          "date": "2025-07-20",
+          "IMERG_PRECTOT": 0.04
+        },
+        {
+          "date": "2025-07-21",
+          "IMERG_PRECTOT": 0.49
+        },
+        {
+          "date": "2025-07-22",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-07-23",
+          "IMERG_PRECTOT": 0.36
+        },
+        {
+          "date": "2025-07-24",
+          "IMERG_PRECTOT": 0.05
+        },
+        {
+          "date": "2025-07-25",
+          "IMERG_PRECTOT": 0.36
+        },
+        {
+          "date": "2025-07-26",
+          "IMERG_PRECTOT": 0.47
+        },
+        {
+          "date": "2025-07-27",
+          "IMERG_PRECTOT": 1.76
+        },
+        {
+          "date": "2025-07-28",
+          "IMERG_PRECTOT": 0.9
+        },
+        {
+          "date": "2025-07-29",
+          "IMERG_PRECTOT": 0.12
+        },
+        {
+          "date": "2025-07-30",
+          "IMERG_PRECTOT": 0.28
+        },
+        {
+          "date": "2025-07-31",
+          "IMERG_PRECTOT": 0.43
+        },
+        {
+          "date": "2025-08-01",
+          "IMERG_PRECTOT": 8.54
+        },
+        {
+          "date": "2025-08-02",
+          "IMERG_PRECTOT": 0.22
+        },
+        {
+          "date": "2025-08-03",
+          "IMERG_PRECTOT": 4.73
+        },
+        {
+          "date": "2025-08-04",
+          "IMERG_PRECTOT": 2.62
+        },
+        {
+          "date": "2025-08-05",
+          "IMERG_PRECTOT": 0.05
+        },
+        {
+          "date": "2025-08-06",
+          "IMERG_PRECTOT": 0.87
+        },
+        {
+          "date": "2025-08-07",
+          "IMERG_PRECTOT": 0.87
+        },
+        {
+          "date": "2025-08-08",
+          "IMERG_PRECTOT": 0.17
+        },
+        {
+          "date": "2025-08-09",
+          "IMERG_PRECTOT": 0.41
+        },
+        {
+          "date": "2025-08-10",
+          "IMERG_PRECTOT": 2.26
+        },
+        {
+          "date": "2025-08-11",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-08-12",
+          "IMERG_PRECTOT": 0.27
+        },
+        {
+          "date": "2025-08-13",
+          "IMERG_PRECTOT": 0.35
+        },
+        {
+          "date": "2025-08-14",
+          "IMERG_PRECTOT": 0.04
+        },
+        {
+          "date": "2025-08-15",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-08-16",
+          "IMERG_PRECTOT": 2.27
+        },
+        {
+          "date": "2025-08-17",
+          "IMERG_PRECTOT": 1.15
+        },
+        {
+          "date": "2025-08-18",
+          "IMERG_PRECTOT": 0.41
+        },
+        {
+          "date": "2025-08-19",
+          "IMERG_PRECTOT": 0.07
+        },
+        {
+          "date": "2025-08-20",
+          "IMERG_PRECTOT": 0.43
+        },
+        {
+          "date": "2025-08-21",
+          "IMERG_PRECTOT": 0.18
+        },
+        {
+          "date": "2025-08-22",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-08-23",
+          "IMERG_PRECTOT": 0.87
+        },
+        {
+          "date": "2025-08-24",
+          "IMERG_PRECTOT": 0.24
+        },
+        {
+          "date": "2025-08-25",
+          "IMERG_PRECTOT": 0.39
+        },
+        {
+          "date": "2025-08-26",
+          "IMERG_PRECTOT": 0.69
+        },
+        {
+          "date": "2025-08-27",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-08-28",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-08-29",
+          "IMERG_PRECTOT": 0.47
+        },
+        {
+          "date": "2025-08-30",
+          "IMERG_PRECTOT": 0.13
+        },
+        {
+          "date": "2025-08-31",
+          "IMERG_PRECTOT": 0.13
+        },
+        {
+          "date": "2025-09-01",
+          "IMERG_PRECTOT": 0.09
+        },
+        {
+          "date": "2025-09-02",
+          "IMERG_PRECTOT": 1.18
+        },
+        {
+          "date": "2025-09-03",
+          "IMERG_PRECTOT": 0.81
+        },
+        {
+          "date": "2025-09-04",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-09-05",
+          "IMERG_PRECTOT": 0.28
+        },
+        {
+          "date": "2025-09-06",
+          "IMERG_PRECTOT": 0.85
+        },
+        {
+          "date": "2025-09-07",
+          "IMERG_PRECTOT": 1.91
+        },
+        {
+          "date": "2025-09-08",
+          "IMERG_PRECTOT": 2.9
+        },
+        {
+          "date": "2025-09-09",
+          "IMERG_PRECTOT": 1.15
+        },
+        {
+          "date": "2025-09-10",
+          "IMERG_PRECTOT": 2.33
+        },
+        {
+          "date": "2025-09-11",
+          "IMERG_PRECTOT": 1.33
+        },
+        {
+          "date": "2025-09-12",
+          "IMERG_PRECTOT": 0.81
+        },
+        {
+          "date": "2025-09-13",
+          "IMERG_PRECTOT": 3.7
+        },
+        {
+          "date": "2025-09-14",
+          "IMERG_PRECTOT": 1.51
+        },
+        {
+          "date": "2025-09-15",
+          "IMERG_PRECTOT": 2.28
+        },
+        {
+          "date": "2025-09-16",
+          "IMERG_PRECTOT": 9.8
+        },
+        {
+          "date": "2025-09-17",
+          "IMERG_PRECTOT": 1.29
+        },
+        {
+          "date": "2025-09-18",
+          "IMERG_PRECTOT": 5.68
+        },
+        {
+          "date": "2025-09-19",
+          "IMERG_PRECTOT": 0.2
+        },
+        {
+          "date": "2025-09-20",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-09-21",
+          "IMERG_PRECTOT": 0.41
+        },
+        {
+          "date": "2025-09-22",
+          "IMERG_PRECTOT": 0.66
+        },
+        {
+          "date": "2025-09-23",
+          "IMERG_PRECTOT": 5.34
+        },
+        {
+          "date": "2025-09-24",
+          "IMERG_PRECTOT": 0.04
+        },
+        {
+          "date": "2025-09-25",
+          "IMERG_PRECTOT": 0.2
+        },
+        {
+          "date": "2025-09-26",
+          "IMERG_PRECTOT": 1.69
+        },
+        {
+          "date": "2025-09-27",
+          "IMERG_PRECTOT": 0.0
+        },
+        {
+          "date": "2025-09-28",
+          "IMERG_PRECTOT": 1.77
+        },
+        {
+          "date": "2025-09-29",
+          "IMERG_PRECTOT": 1.19
+        },
+        {
+          "date": "2025-09-30",
+          "IMERG_PRECTOT": 1.11
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:48:14+00:00"
+    },
+    "srtm": {
+      "status": "ready",
+      "dataset": "NASA SRTMGL1.003",
+      "resolutionArcSeconds": 1,
+      "units": "m EGM96",
+      "method": "NASA HGT, field overlap weighted in the source geographic grid; elevation only",
+      "urls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/SRTMGL1.003/N43E076.SRTMGL1.hgt/N43E076.SRTMGL1.hgt.zip"
+      ],
+      "data": {
+        "min": 761.0,
+        "max": 785.0,
+        "mean": 774.13,
+        "areaCoverageFraction": 1.0,
+        "validPixels": 962
+      },
+      "retrievedAt": "2026-11-14T23:38:24+00:00"
+    },
+    "smap": {
+      "status": "no_coverage",
+      "reason": "No recommended-quality SMAP morning data in up to eight inspected days",
+      "dataset": "NASA SMAP SPL3SMP_E.006",
+      "resolutionMetres": 9000,
+      "units": "m³/m³",
+      "method": "Regional surface moisture, morning pass, QA bits 0–1 clear",
+      "scope": "At most eight days inspected, stops after three usable values",
+      "data": [
+        {
+          "date": "2025-05-01",
+          "granule": "SMAP_L3_SM_P_E_20250501_R19240_002.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/01/SMAP_L3_SM_P_E_20250501_R19240_002.h5",
+          "value": null,
+          "qa": 1,
+          "surfaceFlag": 8,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-02",
+          "granule": "SMAP_L3_SM_P_E_20250502_R19240_002.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/02/SMAP_L3_SM_P_E_20250502_R19240_002.h5",
+          "value": null,
+          "qa": 7,
+          "surfaceFlag": 2047,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-03",
+          "granule": "SMAP_L3_SM_P_E_20250503_R19240_001.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/03/SMAP_L3_SM_P_E_20250503_R19240_001.h5",
+          "value": null,
+          "qa": 1,
+          "surfaceFlag": 8,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-04",
+          "granule": "SMAP_L3_SM_P_E_20250504_R19240_001.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/04/SMAP_L3_SM_P_E_20250504_R19240_001.h5",
+          "value": null,
+          "qa": 7,
+          "surfaceFlag": 2047,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-05",
+          "granule": "SMAP_L3_SM_P_E_20250505_R19240_003.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/05/SMAP_L3_SM_P_E_20250505_R19240_003.h5",
+          "value": null,
+          "qa": 7,
+          "surfaceFlag": 2047,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-06",
+          "granule": "SMAP_L3_SM_P_E_20250506_R19240_002.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/06/SMAP_L3_SM_P_E_20250506_R19240_002.h5",
+          "value": null,
+          "qa": 1,
+          "surfaceFlag": 136,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-07",
+          "granule": "SMAP_L3_SM_P_E_20250507_R19240_001.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/07/SMAP_L3_SM_P_E_20250507_R19240_001.h5",
+          "value": null,
+          "qa": 7,
+          "surfaceFlag": 2047,
+          "gridRow": 254,
+          "gridColumn": 2749
+        },
+        {
+          "date": "2025-05-08",
+          "granule": "SMAP_L3_SM_P_E_20250508_R19240_001.h5",
+          "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/05/08/SMAP_L3_SM_P_E_20250508_R19240_001.h5",
+          "value": null,
+          "qa": 1,
+          "surfaceFlag": 136,
+          "gridRow": 254,
+          "gridColumn": 2749
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:57:23+00:00"
+    },
+    "hls": {
+      "status": "ready",
+      "dataset": "NASA HLSL30/HLSS30 version 2.0",
+      "resolutionMetres": 30,
+      "units": "dimensionless NDVI",
+      "method": "Existing HLS worker, field window and Fmask QA",
+      "scope": "Up to five scenes inspected per product, stops after first usable scene",
+      "data": [
+        {
+          "mean": 0.2599862015251687,
+          "min": 0.2327718223583461,
+          "max": 0.2872005806919913,
+          "validPixels": 2,
+          "fieldPixels": 698,
+          "waterPixels": 89,
+          "date": "2025-05-02",
+          "acquiredAt": "2025-05-02T05:39:18.794Z",
+          "dataset": "HLSL30",
+          "granuleId": "HLS.L30.T43TFH.2025122T053918.v2.0",
+          "conceptId": "G3520351591-LPCLOUD",
+          "revisionId": 2,
+          "tileContainsField": true
+        },
+        {
+          "mean": 0.5561986208137488,
+          "min": 0.16280050611556304,
+          "max": 0.807971922787666,
+          "validPixels": 149,
+          "fieldPixels": 698,
+          "waterPixels": 101,
+          "date": "2025-05-04",
+          "acquiredAt": "2025-05-04T05:57:27.660Z",
+          "dataset": "HLSS30",
+          "granuleId": "HLS.S30.T43TFH.2025124T054701.v2.0",
+          "conceptId": "G3523210459-LPCLOUD",
+          "revisionId": 2,
+          "tileContainsField": true
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:38:24+00:00"
+    },
+    "ecostress": {
+      "status": "ready",
+      "dataset": "NASA ECOSTRESS ECO_L2T_LSTE.002",
+      "resolutionMetres": 70,
+      "units": "°C",
+      "method": "Instantaneous land-surface temperature, clear land pixels with mandatory QC bits 00",
+      "scope": "Up to seven scenes inspected, stops at first usable scene",
+      "data": [
+        {
+          "date": "2025-05-20T11:37:47.626Z",
+          "granule": "ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01",
+          "validPixels": 114,
+          "fieldPixels": 132,
+          "mean": 23.27,
+          "urls": {
+            "LST": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01_LST.tif",
+            "QC": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01_QC.tif",
+            "cloud": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01_cloud.tif",
+            "water": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01/ECOv002_L2T_LSTE_38953_010_43TFH_20250520T113747_0713_01_water.tif"
+          }
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:48:52+00:00"
+    },
+    "sentinel2": {
+      "status": "ready",
+      "dataset": "Copernicus Sentinel-2 L2A Collection 1",
+      "urls": [
+        "https://earth-search.aws.element84.com/v1/search?collections=sentinel-2-c1-l2a&bbox=76.696%2C43.245%2C76.706%2C43.252&datetime=2025-05-01T00%3A00%3A00Z%2F2025-09-30T23%3A59%3A59Z&limit=5",
+        "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/43/T/FH/2025/9/S2C_T43TFH_20250921T055533_L2A/SCL.tif"
+      ],
+      "method": "Scene Classification Layer at polygon cell centres; class 4 vegetation and 5 bare soil",
+      "resolutionMetres": 20,
+      "units": "pixels by SCL class",
+      "data": {
+        "scene": "S2C_T43TFH_20250921T055533_L2A",
+        "date": "2025-09-21T05:57:20.276000Z",
+        "sclCounts": {
+          "4": 481,
+          "5": 842,
+          "6": 254,
+          "7": 3
+        }
+      },
+      "retrievedAt": "2026-11-14T23:48:52+00:00"
+    },
+    "fao-calendar": {
+      "status": "no_coverage",
+      "reason": "FAO Crop Calendar has no records for KZ",
+      "retrievedAt": "2026-11-14T23:48:52+00:00"
+    },
+    "modis": {
+      "status": "ready",
+      "dataset": "NASA MODIS MOD13Q1.061",
+      "resolutionMetres": 250,
+      "units": "dimensionless NDVI",
+      "method": "Centroid pixel from original composite; good pixel-reliability class",
+      "data": [
+        {
+          "date": "2025-04-23",
+          "granule": "MOD13Q1.A2025113.h23v04.061.2025148090856",
+          "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13Q1.061/MOD13Q1.A2025113.h23v04.061.2025148090856/MOD13Q1.A2025113.h23v04.061.2025148090856.hdf",
+          "qa": 0,
+          "ndvi": 0.6431
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:56:37+00:00"
+    },
+    "gaez": {
+      "status": "ready",
+      "dataset": "FAO/IIASA GAEZ v5 RES05-SIX, AgERA5 historical",
+      "units": "categorical class code",
+      "method": "Centroid raster cell; modeled regional suitability under stated management",
+      "period": {
+        "startYear": 2001,
+        "endYear": 2020
+      },
+      "data": [
+        {
+          "crop": "wheat",
+          "cropCode": "WHE",
+          "management": "rainfed, high input",
+          "managementCode": "HRLM",
+          "classCode": 3,
+          "url": "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SIX/GAEZ-V5.RES05-SIX.HP0120.AGERA5.HIST.WHE.HRLM.tif",
+          "gridCrs": "EPSG:4326",
+          "pixelSize": [
+            0.08333333,
+            0.08333333
+          ]
+        },
+        {
+          "crop": "wheat",
+          "cropCode": "WHE",
+          "management": "irrigated, high input",
+          "managementCode": "HILM",
+          "classCode": 2,
+          "url": "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SIX/GAEZ-V5.RES05-SIX.HP0120.AGERA5.HIST.WHE.HILM.tif",
+          "gridCrs": "EPSG:4326",
+          "pixelSize": [
+            0.08333333,
+            0.08333333
+          ]
+        },
+        {
+          "crop": "grain maize",
+          "cropCode": "MZE",
+          "management": "rainfed, high input",
+          "managementCode": "HRLM",
+          "classCode": 4,
+          "url": "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SIX/GAEZ-V5.RES05-SIX.HP0120.AGERA5.HIST.MZE.HRLM.tif",
+          "gridCrs": "EPSG:4326",
+          "pixelSize": [
+            0.08333333,
+            0.08333333
+          ]
+        },
+        {
+          "crop": "grain maize",
+          "cropCode": "MZE",
+          "management": "irrigated, high input",
+          "managementCode": "HILM",
+          "classCode": 3,
+          "url": "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SIX/GAEZ-V5.RES05-SIX.HP0120.AGERA5.HIST.MZE.HILM.tif",
+          "gridCrs": "EPSG:4326",
+          "pixelSize": [
+            0.08333333,
+            0.08333333
+          ]
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:52:53+00:00"
+    },
+    "viirs": {
+      "status": "ready",
+      "dataset": "NASA VIIRS VNP13A1.002",
+      "resolutionMetres": 500,
+      "units": "dimensionless NDVI",
+      "method": "Centroid pixel from original composite; best pixel-reliability class",
+      "data": [
+        {
+          "date": "2025-04-23",
+          "granule": "VNP13A1.A2025113.h23v04.002.2025133211718",
+          "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/VNP13A1.002/VNP13A1.A2025113.h23v04.002.2025133211718/VNP13A1.A2025113.h23v04.002.2025133211718.h5",
+          "qa": 0,
+          "ndvi": 0.547
+        }
+      ],
+      "retrievedAt": "2026-11-14T23:52:53+00:00"
+    },
+    "imerg-final": {
+      "status": "ready",
+      "dataset": "NASA GPM_3IMERGDF.07",
+      "variable": "precipitation",
+      "resolutionDegrees": 0.1,
+      "timeStepHours": 24,
+      "timeStandard": "UTC",
+      "units": "mm/day",
+      "method": "Daily mean precipitation rate in the native grid cell at the field centre",
+      "scope": "Single archive sample from the first matching file; no seasonal series",
+      "data": [
+        {
+          "date": "2025-05-01T00:00:00.000Z",
+          "granule": "3B-DAY.MS.MRG.3IMERG.20250501-S000000-E235959.V07B.nc4",
+          "url": "https://data.gesdisc.earthdata.nasa.gov/data/GPM_L3/GPM_3IMERGDF.07/2025/05/3B-DAY.MS.MRG.3IMERG.20250501-S000000-E235959.V07B.nc4",
+          "gridCell": {
+            "latitude": 43.25,
+            "longitude": 76.75
+          },
+          "value": 3.8299999237060547
+        }
+      ],
+      "retrievedAt": "2026-11-15T00:30:24+00:00"
+    },
+    "gldas": {
+      "status": "ready",
+      "dataset": "NASA GLDAS_NOAH025_3H.2.1",
+      "variable": "SoilMoi0_10cm_inst",
+      "resolutionDegrees": 0.25,
+      "timeStepHours": 3,
+      "timeStandard": "UTC",
+      "units": "kg/m²",
+      "depthCm": [
+        0,
+        10
+      ],
+      "method": "Modelled soil water mass in the native grid cell at the field centre",
+      "scope": "Single archive sample from the first matching file; no seasonal series",
+      "data": [
+        {
+          "date": "2025-05-01T00:00:00.000Z",
+          "granule": "GLDAS_NOAH025_3H.A20250501.0000.021.nc4",
+          "url": "https://data.gesdisc.earthdata.nasa.gov/data/GLDAS/GLDAS_NOAH025_3H.2.1/2025/121/GLDAS_NOAH025_3H.A20250501.0000.021.nc4",
+          "gridCell": {
+            "latitude": 43.125,
+            "longitude": 76.625
+          },
+          "value": 18.95209503173828
+        }
+      ],
+      "retrievedAt": "2026-11-15T00:30:24+00:00"
+    }
+  }
+}

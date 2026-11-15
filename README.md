@@ -2,6 +2,15 @@
 
 Russian-language agricultural decision support. React + TypeScript + Vite frontend; Supabase Auth/PostgreSQL/PostGIS backend. No privileged key is used in the browser.
 
+## Текущий прогресс
+
+- После сохранения контура и названия AGRONA сразу открывает карточку поля. Из неё можно записать прошлые посевы, сравнить свой план по годам или подобрать варианты без готового плана. Для истории достаточно года и культуры.
+- Состав почвы загружается по контуру из SoilGrids. В карточке доступны глубины и покрытие, а фермер может добавить своё уточнение. Планировщик автоматически запрашивает историческую погоду NASA POWER и показывает полноту данных.
+- Сравнение показывает замены по годам и до двух альтернатив к плану фермера. Выбранные культуры можно закрепить. Результат сохраняется и открывается повторно. На широком экране годы выровнены между карточками, на узком планы показаны последовательно.
+- Для тестовых контуров в Казахстане и Небраске подготовлены реальные выборки. Среди них SoilGrids, NASA POWER и отдельные записи из IMERG Final, GLDAS и NLDAS. Источники, покрытие и ограничения описаны в [реестре данных](docs/data-preparation.md).
+
+В локальном деморежиме проверен путь от создания поля до повторного открытия сравнения. Для опубликованной версии остаются развёртывание сервиса SoilGrids и сквозная проверка под обычным аккаунтом. Сравнение носит справочный характер. Для рекомендации по посеву нужны проверенные местные сроки и сведения о сорте, а для расчёта полива нужны данные о почве и доступной воде.
+
 ## Architecture
 
 - `src/components`: application shell and shadcn-style UI primitives.
@@ -23,6 +32,8 @@ npm run dev
 ```
 
 Populate `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with the project URL and public anon/publishable key. Add `VITE_MAPTILER_KEY` to enable licensed satellite tiles; restrict this public key to your application origins. Without it the map uses an explicitly labeled fallback.
+
+For local SoilGrids estimates, install the Python dependencies with `python -m pip install -r scripts/field_data/requirements.txt`. Vite serves the local `/api/soil` endpoint. A hosted static build needs a deployed SoilGrids endpoint and `VITE_SOIL_URL` if it uses a different URL. Keep the optional NASA Earthdata token in a local ignored file such as `.env.earthdata`. See [data preparation](docs/data-preparation.md).
 
 Apply both SQL files in `supabase/migrations` in filename order through Supabase CLI (`supabase db push`) or SQL editor. Configure Auth Site URL and redirect allow-list for `/map` and `/auth` on your localhost and deployed origins. Enable email/password auth and configure SMTP for production confirmation/reset messages.
 
@@ -81,7 +92,7 @@ The checked-in `src/lib/database.types.ts` is schema-aligned source typing, not 
 - Production build and strict TypeScript compilation passed at each implementation checkpoint.
 - Unit tests cover polygon validity, NASA units/missing values, dry-period discontinuities, deterministic rotations, exclusions and insufficient alternatives.
 - Live NASA request validated against the adapter; a complete year was retrieved and cached for demo use.
-- Browser: demo entry, field selection, polygon drawing and saving, coordinate creation, reload persistence, real climate charts, three-step rotation comparison, scenario saving and reload persistence.
+- Browser: demo entry, polygon drawing and saving, coordinate creation, rotation comparison, and reload persistence. The current field workflow was checked at narrow and wide widths with past-season entry, both planning paths, and reopening a saved comparison.
 - npm audit after dependency updates: zero reported vulnerabilities.
 
 ## Still requires connected deployment validation

@@ -543,6 +543,9 @@ td a {
   font-size: 11px;
   white-space: nowrap;
 }
+.map-canvas.is-drawing .field-label {
+  pointer-events: none;
+}
 .map-legend {
   position: absolute;
   bottom: 32px;
@@ -562,22 +565,19 @@ td a {
   background: #b9ef65;
 }
 .map-error,
-.map-instruction {
-  position: absolute;
-  bottom: 80px;
-  left: 18px;
-  right: 18px;
-  padding: 15px;
+.map-drawing-bar {
+  margin-bottom: 12px;
+  padding: 8px 12px;
   background: #fff9ed;
   border-radius: 8px;
-  font-size: 12px;
-  z-index: 3;
+  font-size: 13px;
   display: flex;
-  gap: 12px;
+  gap: 8px 12px;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 .map-error {
-  bottom: 140px;
   color: #ae4d31;
 }
 .field-panel {
@@ -677,6 +677,90 @@ td a {
 .field-panel > p {
   font-size: 12px;
 }
+.field-card-header {
+  scroll-margin-top: 12px;
+}
+.field-panel .field-card-meta {
+  margin: 4px 0 20px;
+  font-size: 14px;
+  color: #53685b;
+}
+.field-actions {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.field-actions h3 {
+  margin: 0 0 2px;
+  font-size: 17px;
+}
+.field-action {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 12px;
+  border: 1px solid #d0ddd2;
+  border-radius: 10px;
+  color: #264738;
+}
+.field-action:hover {
+  background: #f1f6ef;
+}
+.field-action svg {
+  width: 19px;
+  height: 19px;
+}
+.field-action .field-action-arrow {
+  width: 14px;
+}
+.field-action strong,
+.field-action small {
+  display: block;
+}
+.field-action strong {
+  font-size: 15px;
+  line-height: 1.3;
+}
+.field-action small {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #53685b;
+}
+.field-action-primary {
+  background: #285a3a;
+  border-color: #285a3a;
+  color: #fff;
+}
+.field-action-primary small {
+  color: #e0eee2;
+}
+.field-action-primary:hover {
+  background: #234d32;
+}
+.flow-details > summary {
+  cursor: pointer;
+  color: #304e3d;
+  font-size: 15px;
+  font-weight: 650;
+}
+.flow-details[open] > summary {
+  margin-bottom: 14px;
+}
+.field-data {
+  padding: 12px 0;
+  border-block: 1px solid #e2eae3;
+}
+.field-data p, .field-data a {
+  font-size: 13px;
+}
+.field-data a, .rotation-history a {
+  color: #30623e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .search-results {
   background: white;
   border-radius: 8px;
@@ -686,16 +770,6 @@ td a {
 .search-results button {
   text-align: left;
   padding: 12px;
-}
-.map-empty {
-  position: absolute;
-  top: 45%;
-  left: 10%;
-  right: 10%;
-  text-align: center;
-}
-.map-empty p {
-  font-size: 13px;
 }
 @media (max-width: 1150px) {
   .map-layout {
@@ -884,6 +958,141 @@ td a {
 }
 .rotation > .card > p {
   font-size: 13px;
+}
+.rotation-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 28%);
+  grid-template-areas: "plan overview";
+  gap: 20px;
+  align-items: start;
+}
+.rotation .back-link, .rotation h2[tabindex] {
+  scroll-margin-top: 16px;
+}
+.rotation-explore {
+  grid-template-columns: minmax(220px, 28%) minmax(0, 1fr);
+  grid-template-areas: "overview plan";
+}
+.rotation-inputs {
+  grid-area: plan;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.rotation-overview {
+  grid-area: overview;
+  min-width: 0;
+}
+.rotation-overview h2,
+.rotation-plan h2,
+.rotation-goals h2 {
+  font-size: 21px;
+  margin: 0 0 12px;
+}
+.rotation-overview p, .rotation-message {
+  color: #425a4d;
+  line-height: 1.5;
+  font-size: 14px;
+}
+.rotation-history {
+  margin-top: 16px;
+  border-top: 1px solid #e1e9e1;
+  padding-top: 14px;
+  font-size: 14px;
+}
+.plan-years {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 176px), 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.plan-year {
+  background: #f4f8f3;
+  border: 1px solid #e2ebe2;
+  border-radius: 9px;
+  padding: 12px;
+  min-width: 0;
+}
+.plan-year .check-label {
+  margin: 8px 0 0;
+  line-height: 1.35;
+  font-size: 13px;
+}
+.plan-year .check-label input {
+  width: auto;
+  margin: 0;
+}
+.rotation-goals .goal-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+.rotation-goals .goal {
+  gap: 7px;
+  padding: 13px;
+}
+.rotation-goals .goal strong {
+  font-size: 15px;
+}
+.rotation-goals .goal > span {
+  color: #53685b;
+  font-size: 13px;
+}
+.rotation-settings h3 {
+  margin: 16px 0 10px;
+  font-size: 15px;
+}
+.rotation-submit {
+  padding-top: 4px;
+}
+.rotation-submit .button {
+  min-height: 44px;
+  font-size: 15px;
+}
+.rotation .strategy-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 242px), 1fr));
+  align-items: start;
+}
+.rotation .strategy li, .rotation .strategy details p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #425a4d;
+}
+.rotation .sequence > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 10px;
+}
+.rotation .sequence strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.rotation .sequence span, .rotation .sequence small {
+  color: #53685b;
+  font-size: 12px;
+}
+.rotation .sequence small {
+  grid-column: 2;
+}
+.rotation .strategy-details {
+  border-top: 1px solid #e1e9e1;
+  padding-top: 12px;
+}
+@media (min-width: 850px) {
+  .strategy-comparison .strategy h2 {
+    min-height: 2lh;
+  }
+  .strategy-comparison .sequence > div {
+    min-height: 76px;
+    align-content: start;
+  }
+}
+@media (max-width: 960px) {
+  .rotation-workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: "plan" "overview"; }
+  .rotation-explore { grid-template-columns: minmax(0, 1fr); grid-template-areas: "overview" "plan"; }
+}
+@media (max-width: 550px) {
+  .rotation-goals .goal-grid { grid-template-columns: 1fr; }
+  .rotation-submit .button { width: 100%; }
 }
 .goal-grid {
   display: grid;
@@ -1559,6 +1768,14 @@ td a {
   padding: 12px;
   border: 1px solid var(--border, #cdd9d1);
   border-radius: 10px;
+}
+.field-form-details {
+  margin: 14px 0;
+  color: #435e48;
+}
+.field-form-details > summary {
+  cursor: pointer;
+  font-weight: 600;
 }
 .field-boundary-editor legend {
   padding: 0 4px;

@@ -22,7 +22,7 @@ export default function SoilPicker({
           type="button"
           aria-labelledby={`${id} ${id}-value`}
         >
-          <span id={`${id}-value`}>{choice || "Выберите тип почвы"}</span>
+          <span id={`${id}-value`}>{choice || "Не указано"}</span>
           <ChevronsUpDown size={16} aria-hidden="true" />
         </Popover.Trigger>
         <Popover.Content

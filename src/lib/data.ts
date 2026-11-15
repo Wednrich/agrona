@@ -53,6 +53,7 @@ export function useData() {
     row: Record<string, unknown>,
     remove = false,
   ) {
+    let savedFieldId: string | undefined;
     if (table === "fields" && !remove) {
       row = {
         ...row,
@@ -120,6 +121,7 @@ export function useData() {
           data.scenarios = data.scenarios.filter((x) => x.field_id !== id);
         }
       } else {
+        if (table === "fields") savedFieldId = String(id);
         if (
           table === "field_seasons" &&
           data.seasons.some(
@@ -139,6 +141,7 @@ export function useData() {
       if (!supabase) throw new Error("Supabase не настроен");
       if (table === "fields" && !remove) {
         const fieldId = await writeField(supabase, row);
+        savedFieldId = fieldId;
         void supabase.functions
           .invoke("hls-vegetation", {
             body: { fieldId, year: new Date().getUTCFullYear() - 1 },
@@ -166,6 +169,7 @@ export function useData() {
         queryKey: ["rotation-climate", demo ? "demo" : user?.id, row.id],
       });
     }
+    return savedFieldId;
   }
   return { ...query, save };
 }

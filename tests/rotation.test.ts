@@ -38,6 +38,16 @@ const run = (
   );
 
 describe("rotation engine", () => {
+  it("keeps a fixed crop in every alternative and rejects contradictory exclusions", () => {
+    const crop = crops.find((c) => c.growing_season_days <= 150)!;
+    const options = { fixedCrops: { 1: crop.id } };
+    expect(run(options).every((s) => s.crop_sequence[1] === crop.id)).toBe(
+      true,
+    );
+    expect(() => run({ ...options, excluded: [crop.id] })).toThrow(
+      "Закреплённая культура",
+    );
+  });
   it("produces three deterministic and distinct strategies and uses a selected plan", () => {
     const currentSequence = [crops[3].id, crops[0].id, crops[3].id];
     const result = run({ currentSequence });
@@ -242,4 +252,14 @@ describe("rotation climate", () => {
       matchesRotationGeometry("new", JSON.stringify(updated.boundary), "new"),
     ).toBe(true);
   });
+});
+
+it("shows exactly one distinct alternative when only one sequence is allowed beside the farmer plan", () => {
+  const result = run({
+    allowed: [crops[0].id],
+    currentSequence: Array(3).fill(crops[1].id),
+  });
+  expect(result).toHaveLength(2);
+  expect(result[0].crop_sequence).toEqual(Array(3).fill(crops[1].id));
+  expect(result[1].crop_sequence).toEqual(Array(3).fill(crops[0].id));
 });

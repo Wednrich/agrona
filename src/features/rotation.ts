@@ -11,9 +11,12 @@ export interface Constraints {
   irrigation: boolean;
   maxSeasonDays: number;
   soilType?: string;
+  soilEstimateAvailable?: boolean;
   period?: RotationPeriod;
   currentSequence?: string[];
+  fixedCrops?: Record<number, string>;
   currentName?: string;
+  inputRevision?: string;
 }
 
 type Criteria = { soil: number; water: number; climate: number };
@@ -74,6 +77,17 @@ export function generateRotations(
       .map((crop) => crop.id),
   );
   const pool = crops.filter((crop) => eligible.has(crop.id));
+  for (const [year, crop] of Object.entries(constraints.fixedCrops ?? {})) {
+    if (
+      !Number.isInteger(Number(year)) ||
+      Number(year) < 0 ||
+      Number(year) >= horizon ||
+      !eligible.has(crop)
+    )
+      throw new Error(
+        "Закреплённая культура не соответствует ограничениям. Уточните год, допустимые культуры и длину сезона.",
+      );
+  }
 
   const seasons = [...history].sort((a, b) => a.year - b.year);
   const historyKnown = seasons.filter((season) => byId.has(season.crop_id));
@@ -191,7 +205,13 @@ export function generateRotations(
     for (let year = 0; year < horizon; year++) {
       beam = beam
         .flatMap((candidate) =>
-          pool.map((crop) => extend(candidate, crop, focus)),
+          pool
+            .filter(
+              (crop) =>
+                !constraints.fixedCrops?.[year] ||
+                constraints.fixedCrops[year] === crop.id,
+            )
+            .map((crop) => extend(candidate, crop, focus)),
         )
         .sort((a, b) => b.rank - a.rank || a.key.localeCompare(b.key))
         .slice(0, beamWidth);
@@ -207,12 +227,7 @@ export function generateRotations(
         (candidate, crop) => extend(candidate, crop, weights),
         empty,
       )
-    : last
-      ? Array.from({ length: horizon }, () => last).reduce(
-          (candidate, crop) => extend(candidate, crop, weights),
-          empty,
-        )
-      : search(weights)[0];
+    : search(weights)[0];
   const climateFocus =
     priorities.includes("climate") && !priorities.includes("soil");
   const withFocus = (key: keyof Criteria) => ({
@@ -244,11 +259,7 @@ export function generateRotations(
     if (baseline)
       choices.push({
         role: "baseline",
-        rule: hasPlan
-          ? "selected-saved-plan"
-          : last
-            ? "repeat-latest-recorded-crop"
-            : "best-baseline-beam-candidate",
+        rule: hasPlan ? "selected-saved-plan" : "best-baseline-beam-candidate",
         weights,
         rank: baseline.rank,
       });
@@ -277,6 +288,11 @@ export function generateRotations(
   }
   if (!baseline) return [];
   const count = 1 + Number(!!water) + Number(!!resilience);
+  const baselineWaterMax =
+    baseline.crops.reduce(
+      (sum, crop) => sum + Number(crop.water_requirement_max_mm),
+      0,
+    ) / horizon;
   const baselineWater =
     baseline.crops.reduce(
       (sum, crop) => sum + Number(crop.water_requirement_min_mm),
@@ -308,12 +324,17 @@ export function generateRotations(
       `Средняя справочная потребность культур в воде: ${format(waterMin)}–${format(waterMax)} мм за сезон.`,
       `Доступное окно: ${seasonDays} дн. Самая длительная культура в плане: ${Math.max(...sequence.map((c) => c.growing_season_days))} дн.`,
     ];
-    if (!baselineVariant && format(waterMin) < format(baselineWater))
+    if (!baselineVariant && hasPlan) {
       reasons.push(
-        `Нижний справочный ориентир потребности в воде ниже исходного плана на ${format(baselineWater - waterMin)} мм за сезон.`,
+        compareWaterRanges(
+          [baselineWater, baselineWaterMax],
+          [waterMin, waterMax],
+        ),
       );
+    }
     if (
       !baselineVariant &&
+      hasPlan &&
       format(candidate.points.soil / horizon) >
         format(baseline.points.soil / horizon)
     )
@@ -322,6 +343,7 @@ export function generateRotations(
       );
     if (
       !baselineVariant &&
+      hasPlan &&
       climateSignalsAvailable &&
       format(candidate.points.climate / horizon) >
         format(baseline.points.climate / horizon)
@@ -335,9 +357,7 @@ export function generateRotations(
       );
     if (baselineVariant && !hasPlan)
       reasons.push(
-        last
-          ? `Текущий план неизвестен. Для сравнения условно повторена последняя записанная культура (${lastSeason!.year}).`
-          : "Текущий план неизвестен. Точка отсчёта выбрана по общим весам среди допустимых вариантов.",
+        "Текущий план неизвестен. Показаны кандидаты из каталога без сравнения с планом хозяйства.",
       );
     const risks = [
       ...(repeatedFamily
@@ -402,7 +422,9 @@ export function generateRotations(
       "Каталог AGRONA: семейство, продолжительность сезона, справочный диапазон потребности в воде и засухоустойчивость.",
       soilKnown
         ? `Тип почвы со слов фермера: ${soil}. В баллах по воде выделены песчаная и супесчаная почвы.`
-        : "Тип почвы не указан.",
+        : constraints.soilEstimateAvailable
+          ? "Состав почвы оценён по SoilGrids 2.0. Глубины и покрытие показаны в обзоре поля."
+          : "Оценка состава почвы пока отсутствует.",
       irrigation
         ? "Орошение отмечено как доступное. Объём и график подачи неизвестны."
         : "Орошение не отмечено как доступное.",
@@ -411,13 +433,17 @@ export function generateRotations(
       const metric = (v: number | null) =>
         v == null ? "нет данных" : String(format(v));
       sources.push(
-        `NASA POWER, данные сетки у центра поля, ${weather.start} — ${weather.end}. Средняя температура: ${metric(weather.mean)} °C, осадки за дни с данными: ${metric(weather.rain)} мм, дни ≤ 0 °C: ${metric(weather.frostDays)}, дни > 35 °C: ${metric(weather.hotDays)}, самый длинный наблюдавшийся сухой отрезок (< 1 мм/сут): ${metric(weather.longestDry)} дн.`,
+        `NASA POWER, погодная сетка 0,5° × 0,625° у центра поля, ${weather.start} — ${weather.end}. Средняя температура: ${metric(weather.mean)} °C, осадки за дни с данными: ${metric(weather.rain)} мм, дни ≤ 0 °C: ${metric(weather.frostDays)}, дни > 35 °C: ${metric(weather.hotDays)}, самый длинный наблюдавшийся сухой отрезок (< 1 мм/сут): ${metric(weather.longestDry)} дн.`,
         `Дней с данными из ${weather.days}: средняя температура ${weather.coverage.mean}, минимальная ${weather.coverage.min}, максимальная ${weather.coverage.max}, осадки ${weather.coverage.rain}.`,
       );
     }
     const missing = [
       ...(!soilKnown
-        ? ["Нет указанного типа почвы для оценки её текстуры."]
+        ? [
+            constraints.soilEstimateAvailable
+              ? "Для расчёта запаса доступной растениям воды нужны влагоёмкость и глубина корней."
+              : "Нужна оценка состава почвы или сведения анализа поля.",
+          ]
         : []),
       ...(climateFocus && !climateSignalsAvailable
         ? [
@@ -438,6 +464,8 @@ export function generateRotations(
               "В климатическом ряду есть пропуски. Полная сумма осадков, холодный средний фон и окно без заморозков учитываются в оценке только при полном покрытии соответствующего показателя.",
             ]
           : []),
+      "Местный календарь посева и уборки и выполнимость переходов не проверены агрономом. Это кандидаты для обсуждения, не рекомендация к посеву.",
+      "Справочные диапазоны воды не являются расчётом полива или измеренной экономией. Источники значений каталога требуют агрономической проверки.",
       "Нужны данные о сорте, эффективных осадках, запасах влаги, почвенных измерениях и доступном объёме полива.",
       ...(priorities.includes("economy")
         ? [
@@ -481,10 +509,12 @@ export function generateRotations(
       baseline,
       hasPlan
         ? `Текущий план: ${constraints.currentName ?? "выбранная последовательность"}`
-        : "Базовый сценарий для сравнения",
+        : "Кандидат для рассмотрения",
       true,
     ),
-    ...(water ? [explain(water, "Альтернатива: экономия воды", false)] : []),
+    ...(water
+      ? [explain(water, "Альтернатива: потребность в воде", false)]
+      : []),
     ...(resilience
       ? [
           explain(
@@ -497,4 +527,23 @@ export function generateRotations(
         ]
       : []),
   ];
+}
+
+export function compareWaterRanges(
+  base: [number, number],
+  alternative: [number, number],
+): string {
+  const prefix = `Справочный диапазон: ${format(base[0])}–${format(base[1])} → ${format(alternative[0])}–${format(alternative[1])} мм за сезон. `;
+  if (alternative[0] === base[0] && alternative[1] === base[1])
+    return prefix + "Диапазоны равны. Снижение не подтверждено.";
+  if (alternative[1] < base[0])
+    return (
+      prefix +
+      "Справочный диапазон ниже исходного. Это не прогноз экономии полива."
+    );
+  if (alternative[0] > base[1])
+    return (
+      prefix + "Справочная потребность выше исходной. Снижение не подтверждено."
+    );
+  return prefix + "Диапазоны пересекаются: снижение не подтверждено.";
 }

@@ -14,9 +14,10 @@ import * as engine from "../src/features/rotation";
 const adapters = vi.hoisted(() => ({
   data: {} as FarmData,
   invoke: vi.fn(),
+  save: vi.fn(),
 }));
 vi.mock("../src/lib/data", () => ({
-  useData: () => ({ data: adapters.data }),
+  useData: () => ({ data: adapters.data, save: adapters.save }),
 }));
 vi.mock("../src/lib/auth", () => ({
   useAuth: () => ({ demo: false, user: { id: "integration" } }),
@@ -62,11 +63,17 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
-async function openPage() {
+async function openPage(mode?: "plan" | "explore") {
   await act(async () =>
     root.render(
       <QueryClientProvider client={cache}>
-        <MemoryRouter initialEntries={["/rotation"]}>
+        <MemoryRouter
+          initialEntries={[
+            mode
+              ? `/rotation/${adapters.data.fields[0].id}?mode=${mode}`
+              : "/rotation",
+          ]}
+        >
           <Routes>
             <Route path="/rotation" element={<Rotation />} />
             <Route path="/rotation/:fieldId" element={<Rotation />} />
@@ -76,6 +83,7 @@ async function openPage() {
     ),
   );
   expect(cards()).toHaveLength(0);
+  if (mode) return;
   const firstField = host.querySelector<HTMLAnchorElement>("a.card");
   if (!firstField) throw new Error("Missing field picker link");
   await click(firstField);
@@ -118,7 +126,7 @@ describe("rotation page", () => {
       "Архив из хранилища",
     );
 
-    await click(button("Сформировать стратегии"));
+    await click(button("Подобрать варианты"));
     const generate = vi.mocked(engine.generateRotations);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0].slice(1, 6)).toEqual([
@@ -137,9 +145,9 @@ describe("rotation page", () => {
       generate.mock.results[0].value[0].analysis_result.score;
     expect(cards()[0].textContent).toContain(String(previousScore));
 
-    await click(button("Изменить приоритеты"));
+    await click(button("Изменить план и цели"));
     await click(button("Экономить воду"));
-    await click(button("Сформировать стратегии"));
+    await click(button("Подобрать варианты"));
     expect(generate).toHaveBeenCalledTimes(2);
     expect(generate.mock.calls[1][3]).toEqual(["soil"]);
     const result = generate.mock.results[1].value;
@@ -185,11 +193,11 @@ describe("rotation page", () => {
       power.observations,
     );
     await openPage();
-    await click(button("Сформировать стратегии"));
+    await click(button("Подобрать варианты"));
     const before = cards().map(sequence);
-    await click(button("Изменить приоритеты"));
+    await click(button("Изменить план и цели"));
     await click(button("Экономить воду"));
-    await click(button("Сформировать стратегии"));
+    await click(button("Подобрать варианты"));
     const after = cards().map(sequence);
     expect(after.slice(0, 2)).toEqual(before.slice(0, 2));
     expect(after[2]).not.toEqual(before[2]);
@@ -208,12 +216,12 @@ describe("rotation page", () => {
       [],
     );
     await openPage();
-    await click(button("Сформировать стратегии"));
+    await click(button("Подобрать варианты"));
     expect(cards()).toHaveLength(1);
     const original = sequence(cards()[0]);
-    await click(button("Изменить приоритеты"));
+    await click(button("Изменить план и цели"));
     await click(button("Экономить воду"));
-    await click(button("Сформировать стратегии"));
+    await click(button("Подобрать варианты"));
     expect(cards()).toHaveLength(1);
     expect(sequence(cards()[0])).toEqual(original);
     expect(host.textContent).toContain(
@@ -223,4 +231,97 @@ describe("rotation page", () => {
       "Ограничения по культурам и длине сезона",
     );
   });
+});
+
+const selectValue = async (select: HTMLSelectElement, value: string) =>
+  act(async () => {
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+const settle = async () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+
+it("loads a new field without history, enters a plan, saves and reopens its complete comparison", async () => {
+  vi.spyOn(console, "debug").mockImplementation(() => {});
+  adapters.data.seasons = [];
+  adapters.data.scenarios = [];
+  adapters.invoke.mockResolvedValue({
+    data: {
+      metadata: { geometry: JSON.stringify(adapters.data.fields[0].boundary) },
+      observations: power.observations,
+    },
+  });
+  adapters.save.mockImplementation(async (_table, row) => {
+    adapters.data.scenarios.push(
+      JSON.parse(JSON.stringify({ ...row, id: "saved" })),
+    );
+  });
+  await openPage("plan");
+  await settle();
+  expect(adapters.invoke).toHaveBeenCalled();
+  expect(host.textContent).toContain("Истории посевов пока нет");
+  expect(
+    host.querySelector('a[href^="/farms?history="]')?.getAttribute("href"),
+  ).toBe(`/farms?history=${encodeURIComponent(initialDemo.fields[0].id)}`);
+  const plan = [...host.querySelectorAll("select")].find((s) =>
+    [...s.options].some((o) => o.value === "manual"),
+  )!;
+  expect(plan.value).toBe("manual");
+  await click(button("Сравнить планы"));
+  expect(host.textContent).toContain("Выберите культуру для каждого года");
+  for (let i = 0; i < 3; i++)
+    await selectValue(
+      host.querySelector(`select[aria-label="Культура на год ${i + 1}"]`)!,
+      adapters.data.crops[i].id,
+    );
+  await click(button("Сравнить планы"));
+  expect(sequence(cards()[0])).toEqual(
+    adapters.data.crops.slice(0, 3).map((c) => c.name),
+  );
+  expect(cards()[1].textContent).toContain("Вместо:");
+  await click(button("Сохранить сравнение"));
+  expect(adapters.data.scenarios[0].analysis_result.comparison).toHaveLength(3);
+  const before = cards().map(sequence);
+  await act(async () => root.unmount());
+  root = createRoot(host);
+  await openPage();
+  await click(button("Открыть сохранённое сравнение"));
+  expect(cards().map(sequence)).toEqual(before);
+  await click(button("Изменить план и цели"));
+  adapters.data.fields[0].boundary.coordinates[0][1][0] += 0.01;
+  await click(button("Экономить воду"));
+  await settle();
+  expect(host.textContent).toContain("Условия поля изменились");
+  expect(adapters.invoke.mock.calls.length).toBeGreaterThan(1);
+  expect(host.textContent).toContain("Погода не соответствует текущей границе");
+});
+
+it("allows an overview without a plan after provider failure and opens a legacy snapshot", async () => {
+  vi.spyOn(console, "debug").mockImplementation(() => {});
+  adapters.data.seasons = [];
+  adapters.invoke.mockResolvedValue({ error: new Error("offline") });
+  adapters.data.scenarios = [
+    {
+      id: "old",
+      field_id: adapters.data.fields[0].id,
+      name: "Старый план",
+      priorities: [],
+      constraints: {},
+      crop_sequence: [adapters.data.crops[0].id],
+      analysis_result: { score: 0, reasons: [], warnings: [] },
+    },
+  ];
+  await openPage("explore");
+  await settle();
+  expect(host.textContent).toContain("Повторить загрузку погоды");
+  await click(button("Подобрать варианты"));
+  expect(cards()[0].textContent).toContain("КАНДИДАТ");
+  expect(cards()[0].textContent).toContain(
+    "Климатические наблюдения не загружены",
+  );
+  await click(button("Открыть сохранённое сравнение"));
+  expect(cards()).toHaveLength(1);
+  expect(host.textContent).toContain("версия неизвестна");
 });

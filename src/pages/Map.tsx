@@ -12,7 +12,7 @@ import {
 } from "terra-draw";
 import { TerraDrawMapLibreGLAdapter } from "terra-draw-maplibre-gl-adapter";
 import { bbox, feature, featureCollection } from "@turf/turf";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Plus,
   ScanLine,
@@ -20,14 +20,16 @@ import {
   ArrowUpRight,
   X,
   MapPin,
-  Droplets,
-  Wheat,
+  ListChecks,
+  Sprout,
+  BookOpen,
   Expand,
 } from "lucide-react";
 import { useData } from "../lib/data";
 import { useUI } from "../lib/ui";
 import type { Field } from "../lib/types";
 import FieldForm from "../components/FieldForm";
+import SoilEstimate from "../components/SoilEstimate";
 import { Button } from "../components/ui/button";
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -80,7 +82,9 @@ export default function MapPage() {
   });
   const { data, isLoading, error, save } = useData();
   const { farmId, setFarm } = useUI();
-  const [selected, setSelected] = useState("");
+  const [params] = useSearchParams();
+  const [selected, setSelected] = useState(() => params.get("field") ?? "");
+  const fieldHeader = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<{
     field?: Field;
@@ -100,7 +104,10 @@ export default function MapPage() {
     fieldId: string;
     featureId: string | number;
   } | null>(null);
-  const farm = data?.farms.find((f) => f.id === farmId) ?? data?.farms[0];
+  const selectedFarmId = data?.fields.find((f) => f.id === selected)?.farm_id;
+  const farm =
+    data?.farms.find((f) => f.id === (selectedFarmId ?? farmId)) ??
+    data?.farms[0];
   const fields = useMemo(
     () => data?.fields.filter((f) => f.farm_id === farm?.id) ?? [],
     [data?.fields, farm?.id],
@@ -118,6 +125,16 @@ export default function MapPage() {
     if (!drawingRef.current) setSelected(id);
   }, []);
   const field = fields.find((f) => f.id === selected);
+  useEffect(() => {
+    if (field?.id && fieldHeader.current) {
+      fieldHeader.current.focus({ preventScroll: true });
+      fieldHeader.current.scrollIntoView?.({
+        block: window.matchMedia("(max-width: 850px)").matches
+          ? "start"
+          : "nearest",
+      });
+    }
+  }, [field?.id]);
   const key = import.meta.env.VITE_MAPTILER_KEY;
   useEffect(() => {
     if (!container.current) return;
@@ -354,6 +371,18 @@ export default function MapPage() {
     setDrawing(false);
     setEditing(false);
   }
+  function startDrawing() {
+    if (!draw.current) {
+      setForm({});
+      return;
+    }
+    clear();
+    setSearch("");
+    draw.current.setMode("polygon");
+    creatingRef.current = true;
+    drawingRef.current = true;
+    setDrawing(true);
+  }
   return (
     <main className="map-page">
       <div className="map-heading">
@@ -377,7 +406,7 @@ export default function MapPage() {
               </option>
             ))}
           </select>
-          <Button disabled={!farm} onClick={() => setForm({})}>
+          <Button disabled={!farm || drawing || editing} onClick={startDrawing}>
             <Plus size={16} /> Добавить поле
           </Button>
         </div>
@@ -403,208 +432,232 @@ export default function MapPage() {
             : "Базовая карта · спутник не подключён"}
         </span>
       </div>
-      <div className="map-layout">
-        <div className="map-canvas">
-          <div ref={container} className="map-container" />
-          <div className="map-tools">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по полям…"
-              aria-label="Поиск по полям"
-            />
-            {search && (
-              <div className="search-results">
-                {fields
-                  .filter((f) =>
-                    f.name.toLowerCase().includes(search.toLowerCase()),
-                  )
-                  .map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        selectField(f.id);
-                        setSearch("");
-                      }}
-                    >
-                      {f.name}
-                    </button>
-                  ))}
-              </div>
-            )}
-            <div className="row">
+      {(drawing || editing) && (
+        <div className="map-drawing-bar">
+          <span role="status">
+            {editing
+              ? "Выберите полигон и перемещайте вершины."
+              : "Отметьте углы поля. Нажмите первую точку, чтобы замкнуть границу."}
+          </span>
+          <div className="row">
+            {editing && (
               <Button
-                variant="outline"
-                disabled={!ready || !farm || editing}
-                onClick={() => {
-                  clear();
-                  draw.current?.setMode("polygon");
-                  creatingRef.current = true;
-                  setDrawing(true);
-                  drawingRef.current = true;
+                disabled={saving}
+                onClick={async () => {
+                  const target = editTarget.current;
+                  const geometry =
+                    target &&
+                    draw.current?.getSnapshotFeature(target.featureId)
+                      ?.geometry;
+                  if (!target || geometry?.type !== "Polygon") {
+                    setMapError("Редактируемая граница отсутствует.");
+                    return;
+                  }
+                  setSaving(true);
+                  try {
+                    const previousField = fields.find(
+                      (item) => item.id === target.fieldId,
+                    );
+                    if (
+                      previousField?.soil_type &&
+                      !confirm(
+                        "Подтверждаете, что ваши сведения о почве применимы к новой границе?",
+                      )
+                    )
+                      return;
+                    await save("fields", {
+                      id: target.fieldId,
+                      boundary: geometry,
+                    });
+                    clear();
+                  } catch (e) {
+                    setMapError(String(e));
+                  } finally {
+                    setSaving(false);
+                  }
                 }}
               >
-                <ScanLine size={16} /> Нарисовать поле
+                Сохранить границу
               </Button>
-              <Button
-                variant="outline"
-                onClick={fit}
-                aria-label="Показать все поля"
-              >
-                <Expand size={16} />
-              </Button>
-            </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={clear}
+            >
+              Отмена
+            </Button>
           </div>
-          {(drawing || editing) && (
-            <div className="map-instruction">
-              {editing
-                ? "Выберите полигон и перемещайте вершины."
-                : "Щёлкайте по карте. Нажмите первую точку, чтобы замкнуть границу."}
-              {editing && (
+        </div>
+      )}
+      {mapError && (
+        <div className="map-error" role="alert">
+          {mapError}
+          <button
+            onClick={() => setMapError("")}
+            aria-label="Закрыть сообщение"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      <div className="map-layout">
+        <div
+          className={
+            drawing || editing ? "map-canvas is-drawing" : "map-canvas"
+          }
+        >
+          <div ref={container} className="map-container" />
+          {!drawing && !editing && (
+            <div className="map-tools">
+              {fields.length > 0 && (
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Поиск по полям…"
+                  aria-label="Поиск по полям"
+                />
+              )}
+              {fields.length > 0 && search && (
+                <div className="search-results">
+                  {fields
+                    .filter((f) =>
+                      f.name.toLowerCase().includes(search.toLowerCase()),
+                    )
+                    .map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() => {
+                          selectField(f.id);
+                          setSearch("");
+                        }}
+                      >
+                        {f.name}
+                      </button>
+                    ))}
+                </div>
+              )}
+              <div className="row">
                 <Button
-                  disabled={saving}
-                  onClick={async () => {
-                    const target = editTarget.current;
-                    const geometry =
-                      target &&
-                      draw.current?.getSnapshotFeature(target.featureId)
-                        ?.geometry;
-                    if (!target || geometry?.type !== "Polygon") {
-                      setMapError("Редактируемая граница отсутствует.");
-                      return;
-                    }
-                    setSaving(true);
-                    try {
-                      await save("fields", {
-                        id: target.fieldId,
-                        boundary: geometry,
-                      });
-                      clear();
-                    } catch (e) {
-                      setMapError(String(e));
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
+                  variant="outline"
+                  disabled={!ready || !farm}
+                  onClick={startDrawing}
                 >
-                  Сохранить границу
+                  <ScanLine size={16} /> Нарисовать поле
                 </Button>
-              )}
-              <button onClick={clear}>Отмена</button>
+                <Button
+                  variant="outline"
+                  onClick={fit}
+                  aria-label="Показать все поля"
+                >
+                  <Expand size={16} />
+                </Button>
+              </div>
             </div>
           )}
-          {mapError && (
-            <div className="map-error" role="alert">
-              {mapError}
-              <button onClick={() => setMapError("")}>×</button>
-            </div>
-          )}
-          <div className="map-legend">
-            <Layers size={14} />
-            <span>Границы полей</span>
-            <i /> Выбранное поле
-          </div>
-          {!fields.length && !isLoading && (
-            <div className="map-empty card">
-              <h2>Здесь начнётся ваша история</h2>
-              <p>
-                {farm
-                  ? "Нарисуйте границу вашего первого поля."
-                  : "Создайте хозяйство, чтобы добавить поля."}
-              </p>
-              {!farm && (
-                <Link className="button primary" to="/farms">
-                  Создать хозяйство →
-                </Link>
-              )}
+          {fields.length > 0 && !drawing && !editing && (
+            <div className="map-legend">
+              <Layers size={14} />
+              <span>Границы полей</span>
+              <i /> Выбранное поле
             </div>
           )}
         </div>
         <aside className="field-panel">
-          {fields.length > 0 && (
-            <nav className="map-field-list" aria-label="Поля хозяйства">
-              {fields.map((f) => (
-                <button
-                  type="button"
-                  key={f.id}
-                  className="field-list-item"
-                  aria-pressed={f.id === selected}
-                  onClick={() => selectField(f.id)}
-                >
-                  <span>
-                    {f.name}
-                    <small>{Number(f.area_hectares).toFixed(1)} га</small>
-                  </span>
-                  <ArrowUpRight size={17} />
-                </button>
-              ))}
-            </nav>
-          )}
           {field ? (
             <>
-              <div className="row between">
-                <span className="eyebrow">ВЫБРАННОЕ ПОЛЕ</span>
-                <button
-                  aria-label="Закрыть поле"
-                  onClick={() => setSelected("")}
-                >
-                  <X size={17} />
-                </button>
+              <div
+                className="field-card-header"
+                ref={fieldHeader}
+                tabIndex={-1}
+              >
+                <div className="row between">
+                  <span className="eyebrow">ВЫБРАННОЕ ПОЛЕ</span>
+                  <button
+                    aria-label="Закрыть поле"
+                    onClick={() => setSelected("")}
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+                <h2>{field.name}</h2>
+                <p className="field-card-meta">
+                  {Number(field.area_hectares).toLocaleString("ru-RU", {
+                    maximumFractionDigits: 1,
+                  })}{" "}
+                  га
+                  {farm?.region && ` · ${farm.region}`}
+                </p>
               </div>
-              <h2>{field.name}</h2>
               {!selectedBounds && (
                 <p role="status">Граница поля недоступна или повреждена.</p>
               )}
-              <p className="field-region">{farm?.region}</p>
-              <div className="area-number">
-                {Number(field.area_hectares).toFixed(1)} <span>га</span>
-              </div>
-              <div className="field-stat">
-                <Wheat />
-                <div>
-                  <small>Последняя культура · {history[0]?.year ?? "—"}</small>
-                  <strong>
-                    {data?.crops.find((c) => c.id === history[0]?.crop_id)
-                      ?.name ?? "Нет истории"}
-                  </strong>
-                </div>
-              </div>
-              <div className="field-stat">
-                <RefreshIcon />
-                <div>
-                  <small>Предыдущая культура</small>
-                  <strong>
-                    {data?.crops.find((c) => c.id === history[1]?.crop_id)
-                      ?.name ?? "Нет истории"}
-                  </strong>
-                </div>
-              </div>
-              <div className="field-stat">
-                <Droplets />
-                <div>
-                  <small>Орошение</small>
-                  <strong>{field.irrigation_type || "Не указано"}</strong>
-                </div>
-              </div>
-              <div className="field-stat">
-                <Wheat />
-                <div>
-                  <small>Последняя урожайность</small>
-                  <strong>
-                    {history[0]?.yield_tons_per_hectare ?? "—"} т/га
-                  </strong>
-                </div>
-              </div>
-              <div className="analysis-hint">
-                <span>✧ КЛИМАТИЧЕСКАЯ АНАЛИТИКА</span>
-                <p>Загрузите наблюдения NASA для оценки условий и рисков.</p>
-              </div>
-              <Link className="button primary" to={"/analytics/" + field.id}>
-                Анализировать <ArrowUpRight size={16} />
-              </Link>
-              <Link className="button outline" to={"/rotation/" + field.id}>
-                Планировать севооборот →
-              </Link>
+              <nav className="field-actions" aria-label="Действия с полем">
+                <h3>Что хотите сделать?</h3>
+                <Link
+                  className="field-action field-action-primary"
+                  to={`/rotation/${field.id}?mode=plan`}
+                >
+                  <ListChecks aria-hidden="true" />
+                  <span>
+                    <strong>Сравнить мой план</strong>
+                    <small>Указать культуры на будущие годы</small>
+                  </span>
+                  <ArrowUpRight
+                    className="field-action-arrow"
+                    aria-hidden="true"
+                  />
+                </Link>
+                <Link
+                  className="field-action"
+                  to={`/rotation/${field.id}?mode=explore`}
+                >
+                  <Sprout aria-hidden="true" />
+                  <span>
+                    <strong>Посмотреть варианты</strong>
+                    <small>Изучить условия поля и возможные культуры</small>
+                  </span>
+                  <ArrowUpRight
+                    className="field-action-arrow"
+                    aria-hidden="true"
+                  />
+                </Link>
+                <Link
+                  className="field-action"
+                  to={`/farms?history=${encodeURIComponent(field.id)}`}
+                >
+                  <BookOpen aria-hidden="true" />
+                  <span>
+                    <strong>
+                      {history.length
+                        ? "История посевов"
+                        : "Записать прошлые посевы"}
+                    </strong>
+                    <small>
+                      {history[0]
+                        ? `Последняя запись · ${history[0].year}`
+                        : "Добавить год и культуру, если они известны"}
+                    </small>
+                  </span>
+                  <ArrowUpRight
+                    className="field-action-arrow"
+                    aria-hidden="true"
+                  />
+                </Link>
+              </nav>
+              <details className="flow-details field-data">
+                <summary>Данные о поле</summary>
+                <SoilEstimate boundary={field.boundary} />
+                <p>
+                  {field.irrigation_type
+                    ? `Орошение · ${field.irrigation_type}`
+                    : "Орошение не указано"}
+                </p>
+                <Link to={`/analytics/${field.id}`}>
+                  Погода и спутниковые данные →
+                </Link>
+              </details>
               <Button variant="ghost" onClick={() => setForm({ field })}>
                 Редактировать поле
               </Button>
@@ -640,9 +693,20 @@ export default function MapPage() {
               >
                 Изменить границу на карте
               </Button>
-              <Link className="detail-link" to="/farms">
-                Подробнее и история →
-              </Link>
+            </>
+          ) : !isLoading && !fields.length ? (
+            <>
+              <h2>{farm ? "Добавьте первое поле" : "Начните с хозяйства"}</h2>
+              <p>
+                {farm
+                  ? "Найдите участок на карте и нажмите «Нарисовать поле»."
+                  : "Создайте хозяйство, чтобы добавить поля."}
+              </p>
+              {!farm && (
+                <Link className="button primary" to="/farms">
+                  Создать хозяйство
+                </Link>
+              )}
             </>
           ) : (
             <>
@@ -654,6 +718,30 @@ export default function MapPage() {
               </p>
             </>
           )}
+          {fields.length > 0 && (
+            <nav className="map-field-list" aria-label="Поля хозяйства">
+              {fields.map((f) => (
+                <button
+                  type="button"
+                  key={f.id}
+                  className="field-list-item"
+                  aria-pressed={f.id === selected}
+                  onClick={() => selectField(f.id)}
+                >
+                  <span>
+                    {f.name}
+                    <small>{Number(f.area_hectares).toFixed(1)} га</small>
+                  </span>
+                  <ArrowUpRight size={17} />
+                </button>
+              ))}
+            </nav>
+          )}
+          {farm && !drawing && !editing && (
+            <Button variant="ghost" onClick={() => setForm({})}>
+              Добавить по координатам или из файла
+            </Button>
+          )}
           {error && <p className="error">{error.message}</p>}
           {isLoading && <p role="status">Загрузка полей и их границ…</p>}
         </aside>
@@ -662,6 +750,7 @@ export default function MapPage() {
         <FieldForm
           farmId={farm.id}
           {...form}
+          onSaved={setSelected}
           onClose={() => {
             setForm(null);
             clear();
@@ -670,7 +759,4 @@ export default function MapPage() {
       )}
     </main>
   );
-}
-function RefreshIcon() {
-  return <span className="small-icon">↻</span>;
 }

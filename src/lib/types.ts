@@ -55,6 +55,7 @@ export interface Scenario {
   constraints: Record<string, unknown>;
   crop_sequence: string[];
   analysis_result: {
+    comparison?: Scenario[];
     reasons: string[];
     warnings: string[];
     score: number;
