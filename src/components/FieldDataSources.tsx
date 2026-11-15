@@ -1,3 +1,4 @@
+import { t, getLanguage, localize } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../lib/auth";
 import type { Field } from "../lib/types";
@@ -22,40 +23,44 @@ export const satelliteSources = [
 
 const sources = {
   "imerg-power": [
-    "Осадки · NASA IMERG через POWER",
-    "Суточный ряд для ячейки 0,1° у центра поля (UTC).",
+    t("Осадки · NASA IMERG через POWER"),
+    t("Суточный ряд для ячейки 0,1° у центра поля (UTC)."),
   ],
   "imerg-final": [
-    "Осадки · NASA IMERG Final",
-    "Оценка осадков за один день из архива GES DISC (UTC).",
+    t("Осадки · NASA IMERG Final"),
+    t("Оценка осадков за один день из архива GES DISC (UTC)."),
   ],
   smap: [
-    "Влажность поверхности · NASA SMAP",
-    "Спутниковая оценка для района вокруг поля, сетка 9 км. Проверяются до трёх утренних снимков.",
+    t("Влажность поверхности · NASA SMAP"),
+    t(
+      "Спутниковая оценка для района вокруг поля, сетка 9 км. Проверяются до трёх утренних снимков.",
+    ),
   ],
   gldas: [
-    "Вода в почве · NASA GLDAS",
-    "Модельная оценка для слоя 0–10 см на один момент времени.",
+    t("Вода в почве · NASA GLDAS"),
+    t("Модельная оценка для слоя 0–10 см на один момент времени."),
   ],
   nldas: [
-    "Вода в почве · NASA NLDAS",
-    "Региональная модель для Северной Америки, слой 0–10 см на один момент времени.",
+    t("Вода в почве · NASA NLDAS"),
+    t(
+      "Региональная модель для Северной Америки, слой 0–10 см на один момент времени.",
+    ),
   ],
   ecostress: [
-    "Температура поверхности · NASA ECOSTRESS",
-    "Один пригодный снимок поверхности после проверки масок качества.",
+    t("Температура поверхности · NASA ECOSTRESS"),
+    t("Один пригодный снимок поверхности после проверки масок качества."),
   ],
   hls: [
-    "Растительный покров · NASA HLS",
-    "Отдельные снимки NDVI по полю и доля пригодных пикселей.",
+    t("Растительный покров · NASA HLS"),
+    t("Отдельные снимки NDVI по полю и доля пригодных пикселей."),
   ],
   sentinel2: [
-    "Покров · Copernicus Sentinel-2",
-    "Классы поверхности и качества на одном снимке.",
+    t("Покров · Copernicus Sentinel-2"),
+    t("Классы поверхности и качества на одном снимке."),
   ],
   srtm: [
-    "Высота · NASA SRTM",
-    "Средняя высота и диапазон по части поля с покрытием.",
+    t("Высота · NASA SRTM"),
+    t("Средняя высота и диапазон по части поля с покрытием."),
   ],
 } satisfies Record<Exclude<FieldSource, "soilgrids">, [string, string]>;
 
@@ -76,7 +81,7 @@ type Row = {
   sclCounts?: Record<string, number>;
 };
 const number = (value: number) =>
-  value.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
+  value.toLocaleString(getLanguage(), { maximumFractionDigits: 3 });
 
 function descriptions(
   source: SourceId,
@@ -91,9 +96,16 @@ function descriptions(
       typeof row?.IMERG_PRECTOT === "number" ? [row.IMERG_PRECTOT] : [],
     );
     if (!valid.length)
-      return ["За выбранный период нет пригодных значений осадков."];
+      return [t("За выбранный период нет пригодных значений осадков.")];
     return [
-      `${number(valid.reduce((total, value) => total + value, 0))} мм за дни с данными · покрытие ${valid.length} из ${rows.length} дней · ${period.start} — ${period.end}`,
+      t(
+        "{0} мм за дни с данными · покрытие {1} из {2} дней · {3} — {4}",
+        number(valid.reduce((total, value) => total + value, 0)),
+        valid.length,
+        rows.length,
+        period.start,
+        period.end,
+      ),
     ];
   }
   if (source === "srtm") {
@@ -101,11 +113,19 @@ function descriptions(
     return terrain?.mean == null || terrain.min == null || terrain.max == null
       ? []
       : [
-          `Средняя высота ${number(terrain.mean)} м · диапазон ${number(terrain.min)}–${number(terrain.max)} м`,
+          t(
+            "Средняя высота {0} м · диапазон {1}–{2} м",
+            number(terrain.mean),
+            number(terrain.min),
+            number(terrain.max),
+          ),
           ...(terrain.areaCoverageFraction == null
             ? []
             : [
-                `Покрытие контура ${number(terrain.areaCoverageFraction * 100)}%`,
+                t(
+                  "Покрытие контура {0}%",
+                  number(terrain.areaCoverageFraction * 100),
+                ),
               ]),
         ];
   }
@@ -113,22 +133,26 @@ function descriptions(
     const scene = rows[0];
     if (!scene?.sclCounts) return [];
     const classes: Record<string, string> = {
-      4: "растительность",
-      5: "голая поверхность",
-      6: "вода",
+      4: t("растительность"),
+      5: t("голая поверхность"),
+      6: t("вода"),
     };
     const counts = Object.entries(classes).map(
       ([id, name]) => `${name} ${number(scene.sclCounts?.[id] ?? 0)}`,
     );
     return [
-      `${scene.date?.slice(0, 10) ?? "Дата неизвестна"} · ${counts.join(" · ")} пикс.`,
+      t(
+        "{0} · {1} пикс.",
+        scene.date?.slice(0, 10) ?? t("Дата неизвестна"),
+        counts.join(" · "),
+      ),
     ];
   }
   const units = {
-    "imerg-final": "мм/сутки",
-    smap: "м³/м³",
-    gldas: "кг/м²",
-    nldas: "кг/м²",
+    "imerg-final": t("мм/сутки"),
+    smap: t("м³/м³"),
+    gldas: t("кг/м²"),
+    nldas: t("кг/м²"),
     ecostress: "°C",
     hls: "NDVI",
   };
@@ -146,25 +170,26 @@ function descriptions(
         : "";
     const coverage =
       row.fieldPixels && row.validPixels != null
-        ? ` · пригодные пиксели ${row.validPixels} из ${row.fieldPixels}`
+        ? " " +
+          t("· пригодные пиксели {0} из {1}", row.validPixels, row.fieldPixels)
         : "";
     const label = row.dataset ? `${row.dataset} · ` : "";
     return [
-      `${label}${row.date?.slice(0, 10) ?? "Дата неизвестна"}${time} · ${number(value)} ${units[source]}${coverage}`,
+      `${label}${row.date?.slice(0, 10) ?? t("Дата неизвестна")}${time} · ${number(value)} ${units[source]}${coverage}`,
     ];
   });
 }
 
 function failure(reason?: string) {
   if (reason === "Requires the local NASA archive pipeline")
-    return "Источник доступен только при локальной обработке архивов NASA.";
+    return t("Источник доступен только при локальной обработке архивов NASA.");
   if (reason?.includes("EARTHDATA_TOKEN"))
-    return "Для этого источника серверу нужен доступ NASA Earthdata.";
+    return t("Для этого источника серверу нужен доступ NASA Earthdata.");
   if (reason?.includes("application terms"))
-    return "NASA Earthdata требует разрешить доступ к этому архиву.";
+    return t("NASA Earthdata требует разрешить доступ к этому архиву.");
   if (/HTTP (401|403)/.test(reason ?? ""))
-    return "Архив не разрешил доступ. Проверьте учётные данные сервера.";
-  return "Источник временно не ответил или вернул непригодные данные.";
+    return t("Архив не разрешил доступ. Проверьте учётные данные сервера.");
+  return t("Источник временно не ответил или вернул непригодные данные.");
 }
 
 function SourceCard({
@@ -200,20 +225,24 @@ function SourceCard({
       : [];
   return (
     <article className="card field-source-card">
-      <h3>{sources[source][0]}</h3>
-      <p>{sources[source][1]}</p>
-      {query.isFetching && <p role="status">Загружаем…</p>}
-      {query.isError && <p>{query.error.message}</p>}
+      <h3>{t(sources[source][0])}</h3>
+      <p>{t(sources[source][1])}</p>
+      {query.isFetching && <p role="status">{t("Загружаем…")}</p>}
+      {query.isError && <p>{localize(query.error.message)}</p>}
       {!query.isError && data?.status === "blocked" && (
         <p>{failure(data.reason)}</p>
       )}
       {!query.isError && data?.status === "no_coverage" && (
         <p>
           {data.reason?.startsWith("NLDAS regional")
-            ? "Поле находится вне зоны покрытия NLDAS."
+            ? t("Поле находится вне зоны покрытия NLDAS.")
             : source === "smap"
-              ? "В проверенных утренних снимках для этого контура нет значений, прошедших контроль качества."
-              : "Для этого контура и выбранного периода нет пригодных данных."}
+              ? t(
+                  "В проверенных утренних снимках для этого контура нет значений, прошедших контроль качества.",
+                )
+              : t(
+                  "Для этого контура и выбранного периода нет пригодных данных.",
+                )}
         </p>
       )}
       {lines.length > 0 && (
@@ -224,7 +253,7 @@ function SourceCard({
         </ul>
       )}
       {data?.status === "ready" && !lines.length && !query.isError && (
-        <p>Источник не вернул значений для показа.</p>
+        <p>{t("Источник не вернул значений для показа.")}</p>
       )}
       {!query.isFetching && (query.isError || data?.status === "blocked") && (
         <button
@@ -232,7 +261,7 @@ function SourceCard({
           className="button outline"
           onClick={() => void query.refetch()}
         >
-          Повторить
+          {t("Повторить")}
         </button>
       )}
     </article>

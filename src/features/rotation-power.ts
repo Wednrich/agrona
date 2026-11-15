@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import type { Observation } from "../lib/types";
 import { matchesRotationGeometry } from "./rotation-climate";
 
@@ -31,12 +32,16 @@ export async function loadRotationPower(
     signal.throwIfAborted();
     if (error)
       throw new Error(
-        "Не удалось загрузить NASA POWER. Можно повторить запрос или продолжить без погодной оценки.",
+        t(
+          "Не удалось загрузить NASA POWER. Можно повторить запрос или продолжить без погодной оценки.",
+        ),
       );
     if (!data?.pending) {
       if (data?.warning)
         throw new Error(
-          "NASA POWER пока недоступен. Повторите позже или продолжите без погодной оценки.",
+          t(
+            "NASA POWER пока недоступен. Повторите позже или продолжите без погодной оценки.",
+          ),
         );
       if (
         !matchesRotationGeometry(
@@ -46,7 +51,9 @@ export async function loadRotationPower(
         )
       )
         throw new Error(
-          "Погода не соответствует текущей границе поля. Повторите загрузку.",
+          t(
+            "Погода не соответствует текущей границе поля. Повторите загрузку.",
+          ),
         );
       return data.observations ?? [];
     }
@@ -63,6 +70,8 @@ export async function loadRotationPower(
     });
   }
   throw new Error(
-    "Загрузка NASA POWER ещё не завершена. Повторите запрос позже или продолжите без погодной оценки.",
+    t(
+      "Загрузка NASA POWER ещё не завершена. Повторите запрос позже или продолжите без погодной оценки.",
+    ),
   );
 }

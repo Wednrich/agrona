@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { area, kinks, polygon } from "@turf/turf";
 import type { Polygon } from "geojson";
 
@@ -11,7 +12,7 @@ export function validateBoundary(boundary: unknown) {
     !Array.isArray(boundary.coordinates) ||
     boundary.coordinates.length !== 1
   )
-    throw new Error("Нужен полигон без внутренних колец.");
+    throw new Error(t("Нужен полигон без внутренних колец."));
   const ring = boundary.coordinates[0];
   if (
     !Array.isArray(ring) ||
@@ -27,17 +28,17 @@ export function validateBoundary(boundary: unknown) {
     ) ||
     JSON.stringify(ring[0]) !== JSON.stringify(ring[ring.length - 1])
   )
-    throw new Error("Некорректные координаты или незамкнутая граница.");
+    throw new Error(t("Некорректные координаты или незамкнутая граница."));
   const vertices = ring.slice(0, -1);
   const distinct = new Set(vertices.map((point) => point.join(","))).size;
-  if (distinct < 3) throw new Error("Нужны хотя бы три разные точки.");
+  if (distinct < 3) throw new Error(t("Нужны хотя бы три разные точки."));
   if (distinct !== vertices.length)
-    throw new Error("Удалите повторяющиеся точки контура.");
+    throw new Error(t("Удалите повторяющиеся точки контура."));
   const p = polygon(boundary.coordinates);
   if (kinks(p).features.length)
-    throw new Error("Граница пересекает себя. Измените порядок точек.");
+    throw new Error(t("Граница пересекает себя. Измените порядок точек."));
   const squareMeters = area(p);
-  if (squareMeters < 1) throw new Error("Площадь поля слишком мала.");
+  if (squareMeters < 1) throw new Error(t("Площадь поля слишком мала."));
   return squareMeters / 10000;
 }
 
@@ -49,10 +50,10 @@ export const emptyCoordinate = (): CoordinateRow => ({
 });
 
 export function polygonFromCoordinates(rows: CoordinateRow[]): BoundaryPreview {
-  if (rows.length < 3) throw new Error("Добавьте хотя бы три разные точки.");
+  if (rows.length < 3) throw new Error(t("Добавьте хотя бы три разные точки."));
   const ring = rows.map(({ latitude, longitude }, index) => [
-    decimalCoordinate(longitude, 180, "долгота", index),
-    decimalCoordinate(latitude, 90, "широта", index),
+    decimalCoordinate(longitude, 180, t("долгота"), index),
+    decimalCoordinate(latitude, 90, t("широта"), index),
   ]);
   if (ring[0][0] !== ring.at(-1)![0] || ring[0][1] !== ring.at(-1)![1]) {
     ring.push([...ring[0]]);
@@ -73,7 +74,13 @@ function decimalCoordinate(
     Math.abs(value) > limit
   ) {
     throw new Error(
-      `Точка ${index + 1}: ${label} должна быть числом от −${limit} до ${limit}.`,
+      t(
+        "Точка {0}: {1} должна быть числом от −{2} до {3}.",
+        index + 1,
+        label,
+        limit,
+        limit,
+      ),
     );
   }
   return value;
@@ -103,7 +110,7 @@ export function readFieldGeoJSON(text: string): BoundaryPreview {
     value = JSON.parse(text.replace(/^\uFEFF/, ""));
   } catch {
     throw new Error(
-      "Не удалось прочитать GeoJSON. Проверьте формат файла или текста.",
+      t("Не удалось прочитать GeoJSON. Проверьте формат файла или текста."),
     );
   }
   if (value && typeof value === "object" && "type" in value) {
@@ -113,7 +120,7 @@ export function readFieldGeoJSON(text: string): BoundaryPreview {
         !Array.isArray(value.features) ||
         value.features.length !== 1
       ) {
-        throw new Error("GeoJSON должен содержать границу одного поля.");
+        throw new Error(t("GeoJSON должен содержать границу одного поля."));
       }
       value = value.features[0];
     }

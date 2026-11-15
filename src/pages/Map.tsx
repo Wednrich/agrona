@@ -1,3 +1,4 @@
+import { t, getLanguage, localize } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
@@ -161,16 +162,18 @@ export default function MapPage() {
         center: [69.37, 51.19],
         zoom: 12,
         locale: {
-          "NavigationControl.ZoomIn": "Приблизить",
-          "NavigationControl.ZoomOut": "Отдалить",
-          "NavigationControl.ResetBearing": "Север сверху",
-          "AttributionControl.ToggleAttribution": "Источники карты",
+          "NavigationControl.ZoomIn": t("Приблизить"),
+          "NavigationControl.ZoomOut": t("Отдалить"),
+          "NavigationControl.ResetBearing": t("Север сверху"),
+          "AttributionControl.ToggleAttribution": t("Источники карты"),
         },
         attributionControl: { compact: true },
       });
     } catch {
       setMapError(
-        "Браузер не поддерживает WebGL. Используйте список полей и ввод координат.",
+        t(
+          "Браузер не поддерживает WebGL. Используйте список полей и ввод координат.",
+        ),
       );
       return;
     }
@@ -180,7 +183,9 @@ export default function MapPage() {
     m.addControl(new maplibregl.NavigationControl(), "bottom-left");
     m.on("error", () =>
       setMapError(
-        "Подложка недоступна. Проверьте соединение и настройки поставщика карт.",
+        t(
+          "Подложка недоступна. Проверьте соединение и настройки поставщика карт.",
+        ),
       ),
     );
     m.on("load", () => {
@@ -389,12 +394,12 @@ export default function MapPage() {
     <main className="map-page">
       <div className="map-heading">
         <div>
-          <span className="eyebrow">ОБЗОР ХОЗЯЙСТВА</span>
-          <h1>Взгляните на поле шире.</h1>
+          <span className="eyebrow">{t("ОБЗОР ХОЗЯЙСТВА")}</span>
+          <h1>{t("Взгляните на поле шире.")}</h1>
         </div>
         <div className="row">
           <select
-            aria-label="Хозяйство"
+            aria-label={t("Хозяйство")}
             value={farm?.id ?? ""}
             onChange={(e) => {
               setFarm(e.target.value);
@@ -404,42 +409,46 @@ export default function MapPage() {
           >
             {data?.farms.map((f) => (
               <option value={f.id} key={f.id}>
-                {f.name}
+                {demo ? t(f.name) : f.name}
               </option>
             ))}
           </select>
           <Button disabled={!farm || drawing || editing} onClick={startDrawing}>
-            <Plus size={16} /> Добавить поле
+            <Plus size={16} />
+            {" " + t("Добавить поле")}
           </Button>
         </div>
       </div>
       <div className="map-summary">
         <span>
           <MapPin size={15} />
-          {farm?.region || "Выберите хозяйство"}
+          {farm?.region || t("Выберите хозяйство")}
         </span>
         <span>
-          <strong>{fields.length}</strong> поля
+          <strong>{fields.length}</strong>
+          {" " + t("поля")}
         </span>
         <span>
           <strong>
             {fields.reduce((s, f) => s + Number(f.area_hectares), 0).toFixed(1)}
           </strong>{" "}
-          га под управлением
+          {t("га под управлением")}
         </span>
         <span className="source-status">
           ●{" "}
           {key
-            ? "Спутниковая подложка"
-            : "Базовая карта · спутник не подключён"}
+            ? t("Спутниковая подложка")
+            : t("Базовая карта · спутник не подключён")}
         </span>
       </div>
       {(drawing || editing) && (
         <div className="map-drawing-bar">
           <span role="status">
             {editing
-              ? "Выберите полигон и перемещайте вершины."
-              : "Отметьте углы поля. Нажмите первую точку, чтобы замкнуть границу."}
+              ? t("Выберите полигон и перемещайте вершины.")
+              : t(
+                  "Отметьте углы поля. Нажмите первую точку, чтобы замкнуть границу.",
+                )}
           </span>
           <div className="row">
             {editing && (
@@ -452,7 +461,7 @@ export default function MapPage() {
                     draw.current?.getSnapshotFeature(target.featureId)
                       ?.geometry;
                   if (!target || geometry?.type !== "Polygon") {
-                    setMapError("Редактируемая граница отсутствует.");
+                    setMapError(t("Редактируемая граница отсутствует."));
                     return;
                   }
                   setSaving(true);
@@ -463,7 +472,9 @@ export default function MapPage() {
                     if (
                       previousField?.soil_type &&
                       !confirm(
-                        "Подтверждаете, что ваши сведения о почве применимы к новой границе?",
+                        t(
+                          "Подтверждаете, что ваши сведения о почве применимы к новой границе?",
+                        ),
                       )
                     )
                       return;
@@ -479,7 +490,7 @@ export default function MapPage() {
                   }
                 }}
               >
-                Сохранить границу
+                {t("Сохранить границу")}
               </Button>
             )}
             <Button
@@ -488,7 +499,7 @@ export default function MapPage() {
               disabled={saving}
               onClick={clear}
             >
-              Отмена
+              {t("Отмена")}
             </Button>
           </div>
         </div>
@@ -498,7 +509,7 @@ export default function MapPage() {
           {mapError}
           <button
             onClick={() => setMapError("")}
-            aria-label="Закрыть сообщение"
+            aria-label={t("Закрыть сообщение")}
           >
             ×
           </button>
@@ -517,8 +528,8 @@ export default function MapPage() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Поиск по полям…"
-                  aria-label="Поиск по полям"
+                  placeholder={t("Поиск по полям…")}
+                  aria-label={t("Поиск по полям")}
                 />
               )}
               {fields.length > 0 && search && (
@@ -535,7 +546,7 @@ export default function MapPage() {
                           setSearch("");
                         }}
                       >
-                        {f.name}
+                        {demo ? t(f.name) : f.name}
                       </button>
                     ))}
                 </div>
@@ -546,12 +557,13 @@ export default function MapPage() {
                   disabled={!ready || !farm}
                   onClick={startDrawing}
                 >
-                  <ScanLine size={16} /> Нарисовать поле
+                  <ScanLine size={16} />
+                  {" " + t("Нарисовать поле")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={fit}
-                  aria-label="Показать все поля"
+                  aria-label={t("Показать все поля")}
                 >
                   <Expand size={16} />
                 </Button>
@@ -561,8 +573,9 @@ export default function MapPage() {
           {fields.length > 0 && !drawing && !editing && (
             <div className="map-legend">
               <Layers size={14} />
-              <span>Границы полей</span>
-              <i /> Выбранное поле
+              <span>{t("Границы полей")}</span>
+              <i />
+              {" " + t("Выбранное поле")}
             </div>
           )}
         </div>
@@ -575,36 +588,38 @@ export default function MapPage() {
                 tabIndex={-1}
               >
                 <div className="row between">
-                  <span className="eyebrow">ВЫБРАННОЕ ПОЛЕ</span>
+                  <span className="eyebrow">{t("ВЫБРАННОЕ ПОЛЕ")}</span>
                   <button
-                    aria-label="Закрыть поле"
+                    aria-label={t("Закрыть поле")}
                     onClick={() => setSelected("")}
                   >
                     <X size={17} />
                   </button>
                 </div>
-                <h2>{field.name}</h2>
+                <h2>{demo ? t(field.name) : field.name}</h2>
                 <p className="field-card-meta">
-                  {Number(field.area_hectares).toLocaleString("ru-RU", {
+                  {Number(field.area_hectares).toLocaleString(getLanguage(), {
                     maximumFractionDigits: 1,
                   })}{" "}
-                  га
+                  {t("га")}
                   {farm?.region && ` · ${farm.region}`}
                 </p>
               </div>
               {!selectedBounds && (
-                <p role="status">Граница поля недоступна или повреждена.</p>
+                <p role="status">
+                  {t("Граница поля недоступна или повреждена.")}
+                </p>
               )}
-              <nav className="field-actions" aria-label="Действия с полем">
-                <h3>Что хотите сделать?</h3>
+              <nav className="field-actions" aria-label={t("Действия с полем")}>
+                <h3>{t("Что хотите сделать?")}</h3>
                 <Link
                   className="field-action field-action-primary"
                   to={`/rotation/${field.id}?mode=plan`}
                 >
                   <ListChecks aria-hidden="true" />
                   <span>
-                    <strong>Сравнить мой план</strong>
-                    <small>Указать культуры на будущие годы</small>
+                    <strong>{t("Сравнить мой план")}</strong>
+                    <small>{t("Указать культуры на будущие годы")}</small>
                   </span>
                   <ArrowUpRight
                     className="field-action-arrow"
@@ -617,8 +632,10 @@ export default function MapPage() {
                 >
                   <Sprout aria-hidden="true" />
                   <span>
-                    <strong>Посмотреть варианты</strong>
-                    <small>Изучить условия поля и возможные культуры</small>
+                    <strong>{t("Посмотреть варианты")}</strong>
+                    <small>
+                      {t("Изучить условия поля и возможные культуры")}
+                    </small>
                   </span>
                   <ArrowUpRight
                     className="field-action-arrow"
@@ -633,13 +650,13 @@ export default function MapPage() {
                   <span>
                     <strong>
                       {history.length
-                        ? "История посевов"
-                        : "Записать прошлые посевы"}
+                        ? t("История посевов")
+                        : t("Записать прошлые посевы")}
                     </strong>
                     <small>
                       {history[0]
-                        ? `Последняя запись · ${history[0].year}`
-                        : "Добавить год и культуру, если они известны"}
+                        ? t("Последняя запись · {0}", history[0].year)
+                        : t("Добавить год и культуру, если они известны")}
                     </small>
                   </span>
                   <ArrowUpRight
@@ -648,31 +665,37 @@ export default function MapPage() {
                   />
                 </Link>
                 {!demo && (
-                  <Link className="field-action" to={`/analytics/${field.id}?tab=advisor`}>
+                  <Link
+                    className="field-action"
+                    to={`/analytics/${field.id}?tab=advisor`}
+                  >
                     <MessageSquare aria-hidden="true" />
                     <span>
-                      <strong>ИИ-агроном</strong>
-                      <small>Задать вопрос о данных поля</small>
+                      <strong>{t("ИИ-агроном")}</strong>
+                      <small>{t("Задать вопрос о данных поля")}</small>
                     </span>
-                    <ArrowUpRight className="field-action-arrow" aria-hidden="true" />
+                    <ArrowUpRight
+                      className="field-action-arrow"
+                      aria-hidden="true"
+                    />
                   </Link>
                 )}
               </nav>
               <details className="flow-details field-data">
-                <summary>Данные о поле</summary>
+                <summary>{t("Данные о поле")}</summary>
                 <SoilEstimate boundary={field.boundary} />
                 <FieldWeather field={field} />
                 <p>
                   {field.irrigation_type
-                    ? `Орошение · ${field.irrigation_type}`
-                    : "Орошение не указано"}
+                    ? t("Орошение · {0}", localize(field.irrigation_type))
+                    : t("Орошение не указано")}
                 </p>
                 <Link to={`/analytics/${field.id}?tab=sources`}>
-                  Погода и спутниковые данные →
+                  {t("Погода и спутниковые данные →")}
                 </Link>
               </details>
               <Button variant="ghost" onClick={() => setForm({ field })}>
-                Редактировать поле
+                {t("Редактировать поле")}
               </Button>
               <Button
                 variant="outline"
@@ -690,7 +713,7 @@ export default function MapPage() {
                   ]);
                   if (!added?.valid || added.id == null) {
                     setMapError(
-                      "Не удалось подготовить границу к редактированию.",
+                      t("Не удалось подготовить границу к редактированию."),
                     );
                     return;
                   }
@@ -704,35 +727,38 @@ export default function MapPage() {
                   setEditing(true);
                 }}
               >
-                Изменить границу на карте
+                {t("Изменить границу на карте")}
               </Button>
             </>
           ) : !isLoading && !fields.length ? (
             <>
-              <h2>{farm ? "Добавьте первое поле" : "Начните с хозяйства"}</h2>
+              <h2>
+                {farm ? t("Добавьте первое поле") : t("Начните с хозяйства")}
+              </h2>
               <p>
                 {farm
-                  ? "Найдите участок на карте и нажмите «Нарисовать поле»."
-                  : "Создайте хозяйство, чтобы добавить поля."}
+                  ? t("Найдите участок на карте и нажмите «Нарисовать поле».")
+                  : t("Создайте хозяйство, чтобы добавить поля.")}
               </p>
               {!farm && (
                 <Link className="button primary" to="/farms">
-                  Создать хозяйство
+                  {t("Создать хозяйство")}
                 </Link>
               )}
             </>
           ) : (
             <>
-              <span className="eyebrow">ПОЛЯ ХОЗЯЙСТВА</span>
-              <h2>Всё начинается с поля</h2>
+              <span className="eyebrow">{t("ПОЛЯ ХОЗЯЙСТВА")}</span>
+              <h2>{t("Всё начинается с поля")}</h2>
               <p>
-                Выберите участок на карте или в списке, чтобы увидеть его
-                историю.
+                {t(
+                  "Выберите участок на карте или в списке, чтобы увидеть его историю.",
+                )}
               </p>
             </>
           )}
           {fields.length > 0 && (
-            <nav className="map-field-list" aria-label="Поля хозяйства">
+            <nav className="map-field-list" aria-label={t("Поля хозяйства")}>
               {fields.map((f) => (
                 <button
                   type="button"
@@ -742,8 +768,11 @@ export default function MapPage() {
                   onClick={() => selectField(f.id)}
                 >
                   <span>
-                    {f.name}
-                    <small>{Number(f.area_hectares).toFixed(1)} га</small>
+                    {demo ? t(f.name) : f.name}
+                    <small>
+                      {Number(f.area_hectares).toFixed(1)}
+                      {" " + t("га")}
+                    </small>
                   </span>
                   <ArrowUpRight size={17} />
                 </button>
@@ -752,11 +781,11 @@ export default function MapPage() {
           )}
           {farm && !drawing && !editing && (
             <Button variant="ghost" onClick={() => setForm({})}>
-              Добавить по координатам или из файла
+              {t("Добавить по координатам или из файла")}
             </Button>
           )}
-          {error && <p className="error">{error.message}</p>}
-          {isLoading && <p role="status">Загрузка полей и их границ…</p>}
+          {error && <p className="error">{localize(error.message)}</p>}
+          {isLoading && <p role="status">{t("Загрузка полей и их границ…")}</p>}
         </aside>
       </div>
       {form && farm && (

@@ -1,3 +1,4 @@
+import { t, localize } from "../lib/i18n";
 import { useState } from "react";
 import VegetationOverlay from "./VegetationOverlay";
 import { useQuery } from "@tanstack/react-query";
@@ -63,11 +64,12 @@ export default function VegetationAnalytics({
         const message =
           response?.error ??
           (error.context.status === 404
-            ? "Функция Sentinel-2 ещё не развёрнута."
-            : "Сервис Sentinel-2 недоступен.");
+            ? t("Функция Sentinel-2 ещё не развёрнута.")
+            : t("Сервис Sentinel-2 недоступен."));
         throw new Error(message);
       }
-      if (error) throw new Error("Не удалось связаться с сервисом Sentinel-2.");
+      if (error)
+        throw new Error(t("Не удалось связаться с сервисом Sentinel-2."));
       return data;
     },
   });
@@ -98,7 +100,7 @@ export default function VegetationAnalytics({
         { body: { fieldId: field.id, year, overlayDate: date } },
       );
       if (error)
-        throw new Error("Не удалось получить слой NDVI за выбранную дату.");
+        throw new Error(t("Не удалось получить слой NDVI за выбранную дату."));
       return data;
     },
   });
@@ -120,48 +122,57 @@ export default function VegetationAnalytics({
         <div>
           <strong>
             Copernicus Sentinel-2 Level-2A · {year}
-            {query.data?.cached ? " · из кэша" : ""}
+            {query.data?.cached ? " " + t("· из кэша") : ""}
           </strong>
           <p>
-            NDVI = (B08 − B04) / (B08 + B04). Сетка 10 м, маска SCL 20 м.
-            Оставляем растительность, открытый грунт и воду внутри границы поля.
-            Облака, тени облаков, снег и недействительные пиксели исключены.
+            {t(
+              "NDVI = (B08 − B04) / (B08 + B04). Сетка 10 м, маска SCL 20 м. Оставляем растительность, открытый грунт и воду внутри границы поля. Облака, тени облаков, снег и недействительные пиксели исключены.",
+            )}
           </p>
           <p>
-            NDVI описывает спектральный отклик поверхности. По нему нельзя
-            напрямую определить влажность почвы, урожайность или здоровье
-            растений.
+            {t(
+              "NDVI описывает спектральный отклик поверхности. По нему нельзя напрямую определить влажность почвы, урожайность или здоровье растений.",
+            )}
           </p>
         </div>
       </div>
       {demo ? (
         <p className="notice">
-          Для анализа Sentinel-2 выберите сохранённое поле в своём аккаунте.
+          {t(
+            "Для анализа Sentinel-2 выберите сохранённое поле в своём аккаунте.",
+          )}
         </p>
       ) : year < earliestSentinelYear ? (
         <p className="notice">
-          Для Sentinel-2 Level-2A в приложении доступны годы с 2017 года.
-          Покрытие зависит от места и даты.
+          {t(
+            "Для Sentinel-2 Level-2A в приложении доступны годы с 2017 года. Покрытие зависит от места и даты.",
+          )}
         </p>
       ) : (
         <>
           {waiting && !warning && (
-            <p role="status">Выполняется анализ Sentinel-2 за {year} год…</p>
+            <p role="status">
+              {t("Выполняется анализ Sentinel-2 за") + " "}
+              {year}
+              {" " + t("год…")}
+            </p>
           )}
           {warning && (
             <p role="alert" className="notice">
-              {warning}
+              {localize(warning)}
             </p>
           )}
           {!waiting && !warning && !valid.length && (
             <p className="notice">
-              За {year} год нет снимков с пригодными пикселями внутри поля.
+              {t("За") + " "}
+              {year}
+              {" " + t("год нет снимков с пригодными пикселями внутри поля.")}
             </p>
           )}
           {!waiting && warning && (
             <div>
               <Button variant="outline" onClick={() => void query.refetch()}>
-                Проверить снова
+                {t("Проверить снова")}
               </Button>
             </div>
           )}
@@ -169,16 +180,16 @@ export default function VegetationAnalytics({
             <>
               <div className="metric-grid">
                 {[
-                  ["Средний NDVI", format(mean)],
+                  [t("Средний NDVI"), format(mean)],
                   [
-                    "Минимальный NDVI",
+                    t("Минимальный NDVI"),
                     format(Math.min(...valid.map((row) => row.min!))),
                   ],
                   [
-                    "Максимальный NDVI",
+                    t("Максимальный NDVI"),
                     format(Math.max(...valid.map((row) => row.max!))),
                   ],
-                  ["Дни с данными", String(valid.length)],
+                  [t("Дни с данными"), String(valid.length)],
                 ].map(([label, value]) => (
                   <div key={label} className="card metric">
                     <div>{label}</div>
@@ -187,10 +198,11 @@ export default function VegetationAnalytics({
                 ))}
               </div>
               <section className="card">
-                <h3>Сезонная динамика NDVI</h3>
+                <h3>{t("Сезонная динамика NDVI")}</h3>
                 <p>
-                  Дневные мозаики UTC. Среднее за год взвешено по числу
-                  пригодных пикселей на каждую дату.
+                  {t(
+                    "Дневные мозаики UTC. Среднее за год взвешено по числу пригодных пикселей на каждую дату.",
+                  )}
                 </p>
                 <ResponsiveContainer width="100%" height={275}>
                   <LineChart
@@ -217,7 +229,7 @@ export default function VegetationAnalytics({
                     />
                     <Line
                       dataKey="mean"
-                      name="Средний NDVI"
+                      name={t("Средний NDVI")}
                       stroke="#4eaa6e"
                       connectNulls={false}
                     />
@@ -228,9 +240,9 @@ export default function VegetationAnalytics({
           )}
           {!!rows.length && (
             <section className="card" style={{ overflowX: "auto" }}>
-              <h3>Слой NDVI</h3>
+              <h3>{t("Слой NDVI")}</h3>
               <select
-                aria-label="Дата слоя NDVI"
+                aria-label={t("Дата слоя NDVI")}
                 value={date}
                 onChange={(event) =>
                   setOverlaySelection({
@@ -240,19 +252,23 @@ export default function VegetationAnalytics({
                   })
                 }
               >
-                <option value="">Выберите дату снимка</option>
+                <option value="">{t("Выберите дату снимка")}</option>
                 {valid.map((row) => (
                   <option key={row.date}>{row.date}</option>
                 ))}
               </select>
-              {overlay.isFetching && <p role="status">Загружаем слой NDVI…</p>}
-              {overlay.error && <p role="alert">{overlay.error.message}</p>}
+              {overlay.isFetching && (
+                <p role="status">{t("Загружаем слой NDVI…")}</p>
+              )}
+              {overlay.error && (
+                <p role="alert">{localize(overlay.error.message)}</p>
+              )}
               {overlay.data && (
                 <>
                   <p>
-                    NDVI от −1 (охра) до +1 (зелёный). Прозрачные участки
-                    исключены маской. Слой предпросмотра 256 × 256, статистика
-                    рассчитана отдельно на сетке 10 м.
+                    {t(
+                      "NDVI от −1 (охра) до +1 (зелёный). Прозрачные участки исключены маской. Слой предпросмотра 256 × 256, статистика рассчитана отдельно на сетке 10 м.",
+                    )}
                   </p>
                   <VegetationOverlay
                     image={overlay.data.image}
@@ -260,21 +276,21 @@ export default function VegetationAnalytics({
                   />
                 </>
               )}
-              <h3>Даты и покрытие поля</h3>
+              <h3>{t("Даты и покрытие поля")}</h3>
               <p>
-                Покрытие — доля пригодных пикселей от числа пикселей внутри
-                границы. «—» означает, что сервис не сообщил размер этой выборки
-                или NDVI недоступен.
+                {t(
+                  "Покрытие — доля пригодных пикселей от числа пикселей внутри границы. «—» означает, что сервис не сообщил размер этой выборки или NDVI недоступен.",
+                )}
               </p>
               <table>
                 <thead>
                   <tr>
-                    <th>Дата UTC</th>
-                    <th>Среднее</th>
-                    <th>Мин.</th>
-                    <th>Макс.</th>
-                    <th>Пригодные пиксели</th>
-                    <th>Покрытие</th>
+                    <th>{t("Дата UTC")}</th>
+                    <th>{t("Среднее")}</th>
+                    <th>{t("Мин.")}</th>
+                    <th>{t("Макс.")}</th>
+                    <th>{t("Пригодные пиксели")}</th>
+                    <th>{t("Покрытие")}</th>
                   </tr>
                 </thead>
                 <tbody>

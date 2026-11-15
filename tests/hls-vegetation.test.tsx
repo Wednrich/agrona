@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
+import { setLanguage } from "../src/lib/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import HlsVegetationAnalytics from "../src/components/HlsVegetationAnalytics";
 import type { Field } from "../src/lib/types";
+
+setLanguage("ru");
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("../src/lib/supabase", () => ({ supabase: { functions: { invoke } } }));
@@ -35,7 +38,12 @@ it("shows saved observations while partial and loads the finished cache on a fre
   };
   invoke
     .mockResolvedValueOnce({
-      data: { observations: [observation], state: "partial", pending: true, queued: true },
+      data: {
+        observations: [observation],
+        state: "partial",
+        pending: true,
+        queued: true,
+      },
     })
     .mockResolvedValueOnce({
       data: { observations: [observation], state: "succeeded", cached: true },
@@ -58,13 +66,22 @@ it("shows saved observations while partial and loads the finished cache on a fre
         await act(async () =>
           root.render(
             <QueryClientProvider client={client}>
-              <HlsVegetationAnalytics field={field} year={2025} ownerId="owner" demo={false} />
+              <HlsVegetationAnalytics
+                field={field}
+                year={2025}
+                ownerId="owner"
+                demo={false}
+              />
             </QueryClientProvider>,
           ),
         );
-        await vi.waitFor(() => expect(container.textContent).toContain("0.550"));
+        await vi.waitFor(() =>
+          expect(container.textContent).toContain("0.550"),
+        );
         if (partial) {
-          expect(container.textContent).toContain("Частичные результаты сохранены");
+          expect(container.textContent).toContain(
+            "Частичные результаты сохранены",
+          );
         } else {
           expect(container.textContent).toContain("из кэша");
           expect(container.textContent).not.toContain("Ожидается продолжение");

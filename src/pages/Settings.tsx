@@ -1,3 +1,4 @@
+import { t, localize } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
@@ -24,19 +25,20 @@ export default function Settings() {
   });
   return (
     <main className="page">
-      <span className="eyebrow">ЛИЧНОЕ ПРОСТРАНСТВО</span>
-      <h1>Настройки</h1>
+      <span className="eyebrow">{t("ЛИЧНОЕ ПРОСТРАНСТВО")}</span>
+      <h1>{t("Настройки")}</h1>
       <section className="card settings-card">
-        <h2>Ваш профиль</h2>
+        <h2>{t("Ваш профиль")}</h2>
         {demo ? (
           <p>
-            Вы работаете в деморежиме. Изменения полей сохраняются только в этом
-            браузере, отдельно от аккаунтов.
+            {t(
+              "Вы работаете в деморежиме. Изменения полей сохраняются только в этом браузере, отдельно от аккаунтов.",
+            )}
           </p>
         ) : query.isLoading ? (
-          <p>Загрузка профиля…</p>
+          <p>{t("Загрузка профиля…")}</p>
         ) : query.error ? (
-          <p className="error">{query.error.message}</p>
+          <p className="error">{localize(query.error.message)}</p>
         ) : (
           <form
             key={query.data?.id}
@@ -51,7 +53,7 @@ export default function Settings() {
                   country: f.get("country"),
                   region: f.get("region"),
                 });
-                setMessage("Профиль сохранён");
+                setMessage(t("Профиль сохранён"));
                 await query.refetch();
               } catch (e) {
                 setMessage(String(e));
@@ -61,9 +63,9 @@ export default function Settings() {
             }}
           >
             {[
-              ["full_name", "Ваше имя"],
-              ["country", "Страна"],
-              ["region", "Регион"],
+              ["full_name", t("Ваше имя")],
+              ["country", t("Страна")],
+              ["region", t("Регион")],
             ].map(([name, label]) => (
               <label key={name}>
                 {label}
@@ -76,31 +78,29 @@ export default function Settings() {
               </label>
             ))}
             <label>
-              Электронная почта
+              {t("Электронная почта")}
               <input value={user?.email ?? ""} readOnly />
             </label>
-            <Button disabled={busy}>Сохранить профиль</Button>
+            <Button disabled={busy}>{t("Сохранить профиль")}</Button>
             <p role="status">{message}</p>
           </form>
         )}
       </section>
       <section className="card settings-card">
-        <h2>Источники и ограничения</h2>
+        <h2>{t("Источники и ограничения")}</h2>
         <p>
-          NASA POWER — климатические наблюдения на регулярной сетке. NDVI и
-          измерения влажности почвы не подключены.
+          {t(
+            "NASA POWER — климатические наблюдения на регулярной сетке. NDVI и измерения влажности почвы не подключены.",
+          )}
         </p>
         <p>
-          Спутниковая подложка:{" "}
+          {t("Спутниковая подложка:")}{" "}
           {import.meta.env.VITE_MAPTILER_KEY
             ? "MapTiler"
-            : "не настроена; используется OpenStreetMap"}
+            : t("не настроена; используется OpenStreetMap")}
           .
         </p>
-        <p>
-          Язык интерфейса: русский. Рекомендации требуют проверки в местных
-          условиях.
-        </p>
+        <p>{t("Рекомендации требуют проверки в местных условиях.")}</p>
       </section>
     </main>
   );

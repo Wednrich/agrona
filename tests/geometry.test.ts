@@ -1,3 +1,4 @@
+import { setLanguage } from "../src/lib/i18n";
 import { describe, it, expect } from "vitest";
 import {
   validateBoundary,
@@ -5,6 +6,8 @@ import {
   coordinatesFromPolygon,
   readFieldGeoJSON,
 } from "../src/lib/field-boundary";
+setLanguage("ru");
+
 describe("field geometry", () => {
   it("computes hectares", () =>
     expect(

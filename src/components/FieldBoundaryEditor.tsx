@@ -1,3 +1,4 @@
+import { t, getLanguage } from "../lib/i18n";
 import { lazy, Suspense, useId, useRef, useState } from "react";
 import type { Polygon } from "geojson";
 import {
@@ -17,7 +18,10 @@ const modes = [
   ["coordinates", "Ввести координаты"],
   ["file", "Импортировать GeoJSON"],
 ] as const;
-const areaFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 4 });
+const areaFormat = (value: number) =>
+  new Intl.NumberFormat(getLanguage(), { maximumFractionDigits: 4 }).format(
+    value,
+  );
 
 export default function FieldBoundaryEditor({
   initial,
@@ -73,7 +77,7 @@ export default function FieldBoundaryEditor({
       className="field-boundary-editor"
       aria-describedby={descriptionId}
     >
-      <legend>Граница поля</legend>
+      <legend>{t("Граница поля")}</legend>
       <div className="row wrap">
         {modes.map(([key, label]) => (
           <Button
@@ -83,7 +87,7 @@ export default function FieldBoundaryEditor({
             aria-pressed={mode === key}
             onClick={() => switchMode(key)}
           >
-            {label}
+            {t(label)}
           </Button>
         ))}
       </div>
@@ -99,8 +103,9 @@ export default function FieldBoundaryEditor({
       {mode === "draw" && (
         <>
           <p>
-            Нажимайте на карту, чтобы поставить точки. Нажмите первую точку,
-            чтобы замкнуть контур.
+            {t(
+              "Нажимайте на карту, чтобы поставить точки. Нажмите первую точку, чтобы замкнуть контур.",
+            )}
           </p>
           <Button
             type="button"
@@ -110,13 +115,13 @@ export default function FieldBoundaryEditor({
               onChange(drawing ? preview?.geometry : undefined);
             }}
           >
-            {drawing ? "Отменить рисование" : "Начать рисование"}
+            {drawing ? t("Отменить рисование") : t("Начать рисование")}
           </Button>
         </>
       )}
       {mode === "file" && (
         <label>
-          Файл GeoJSON с границей одного поля
+          {t("Файл GeoJSON с границей одного поля")}
           <input
             type="file"
             accept=".geojson,.json,application/geo+json,application/json"
@@ -133,17 +138,17 @@ export default function FieldBoundaryEditor({
                   update(() => readFieldGeoJSON(contents));
               } catch {
                 if (request === importRequest.current)
-                  setError("Не удалось открыть выбранный файл.");
+                  setError(t("Не удалось открыть выбранный файл."));
               }
             }}
           />
         </label>
       )}
       <details open={mode === "raw" || undefined}>
-        <summary>Дополнительно</summary>
+        <summary>{t("Дополнительно")}</summary>
         {mode === "raw" ? (
           <label>
-            Исходный GeoJSON
+            {t("Исходный GeoJSON")}
             <textarea
               rows={6}
               value={raw}
@@ -160,7 +165,7 @@ export default function FieldBoundaryEditor({
             variant="outline"
             onClick={() => switchMode("raw")}
           >
-            Ввести исходный GeoJSON
+            {t("Ввести исходный GeoJSON")}
           </Button>
         )}
       </details>
@@ -171,11 +176,11 @@ export default function FieldBoundaryEditor({
       >
         {error ||
           (preview
-            ? `Предварительная площадь: ${areaFormat.format(preview.hectares)} га`
-            : "Задайте границу, чтобы увидеть полигон и площадь.")}
+            ? t("Предварительная площадь: {0} га", areaFormat(preview.hectares))
+            : t("Задайте границу, чтобы увидеть полигон и площадь."))}
       </p>
       {(lastValid || mode === "draw") && (
-        <Suspense fallback={<p role="status">Загружаем карту…</p>}>
+        <Suspense fallback={<p role="status">{t("Загружаем карту…")}</p>}>
           <FieldBoundaryMap
             geometry={preview?.geometry}
             drawing={drawing}

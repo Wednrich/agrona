@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 export async function powerErrorMessage(error: unknown): Promise<string> {
@@ -12,11 +13,15 @@ export async function powerErrorMessage(error: unknown): Promise<string> {
       .catch(() => null);
     if (response.status === 404)
       return body?.error === "Поле недоступно"
-        ? "Поле недоступно. Откройте аналитику из списка ваших полей."
-        : "Функция nasa-power не найдена в подключённом проекте Supabase.";
+        ? t("Поле недоступно. Откройте аналитику из списка ваших полей.")
+        : t("Функция nasa-power не найдена в подключённом проекте Supabase.");
     if (response.status === 401 || response.status === 403)
-      return "Не удалось подтвердить доступ к аналитике. Войдите в аккаунт заново.";
+      return t(
+        "Не удалось подтвердить доступ к аналитике. Войдите в аккаунт заново.",
+      );
     if (typeof body?.error === "string") return body.error;
   }
-  return "Не удалось связаться с сервисом NASA POWER. Повторите запрос позже.";
+  return t(
+    "Не удалось связаться с сервисом NASA POWER. Повторите запрос позже.",
+  );
 }

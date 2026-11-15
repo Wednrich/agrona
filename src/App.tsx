@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { t, useLanguage } from "./lib/i18n";
+import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import Auth from "./pages/Auth";
@@ -12,7 +13,7 @@ const Farms = lazy(() => import("./pages/Farms"));
 function Protected() {
   const { user, demo, loading } = useAuth();
   return loading ? (
-    <p>Загрузка…</p>
+    <p>{t("Загрузка…")}</p>
   ) : user || demo ? (
     <Outlet />
   ) : (
@@ -20,8 +21,13 @@ function Protected() {
   );
 }
 export default function App() {
+  const language = useLanguage();
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = t("AGRONA — аналитика полей и севооборот");
+  }, [language]);
   return (
-    <Suspense fallback={<div className="page">Загрузка…</div>}>
+    <Suspense fallback={<div className="page">{t("Загрузка…")}</div>}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />

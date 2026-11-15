@@ -1,6 +1,9 @@
+import { setLanguage } from "../src/lib/i18n";
 import { describe, it, expect, vi } from "vitest";
 import { loadRotationPower } from "../src/features/rotation-power";
 import { compareWaterRanges } from "../src/features/rotation";
+
+setLanguage("ru");
 
 describe("rotation automatic weather", () => {
   it("starts a cold-cache job and waits for matching observations", async () => {

@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { useState, type ComponentProps } from "react";
 import HlsVegetationAnalytics from "./HlsVegetationAnalytics";
 import SentinelVegetationAnalytics from "./SentinelVegetationAnalytics";
@@ -9,7 +10,7 @@ export default function VegetationAnalytics(
   return (
     <>
       <label className="row">
-        Источник растительности
+        {t("Источник растительности")}
         <select
           value={source}
           onChange={(event) => setSource(event.target.value)}

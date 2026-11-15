@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import type { Field } from "../lib/types";
 import { supabase } from "../lib/supabase";
 
@@ -62,8 +63,10 @@ export async function loadFieldSource(
     !["ready", "no_coverage", "blocked"].includes(result?.status)
   )
     throw new Error(
-      serviceMessages[result?.status] ??
-        "Не удалось получить данные от сервиса поля.",
+      t(
+        serviceMessages[result?.status] ??
+          "Не удалось получить данные от сервиса поля.",
+      ),
     );
   return result;
 }

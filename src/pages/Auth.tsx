@@ -1,4 +1,6 @@
+import { t } from "../lib/i18n";
 import { Brand } from "../components/Brand";
+import { LanguageSelect } from "../components/LanguageSelect";
 import {
   CountryPicker,
   LocationPicker,
@@ -37,13 +39,13 @@ export default function Auth() {
     setMessage("");
     if (mode === "register") {
       const next: Record<string, string> = {};
-      if (!fullName) next.full_name = "Введите ваше имя.";
-      if (!country) next.country = "Выберите страну.";
-      if (!place) next.region = "Выберите регион или город из списка.";
+      if (!fullName) next.full_name = t("Введите ваше имя.");
+      if (!country) next.country = t("Выберите страну.");
+      if (!place) next.region = t("Выберите регион или город из списка.");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-        next.email = "Введите корректный адрес.";
+        next.email = t("Введите корректный адрес.");
       if (password.length < 8)
-        next.password = "Пароль должен содержать не менее 8 символов.";
+        next.password = t("Пароль должен содержать не менее 8 символов.");
       setErrors(next);
       if (Object.keys(next).length) return;
     }
@@ -75,7 +77,7 @@ export default function Auth() {
           redirectTo: location.origin + "/auth?mode=recovery",
         });
         if (error) throw error;
-        setMessage("Ссылка для восстановления отправлена на почту.");
+        setMessage(t("Ссылка для восстановления отправлена на почту."));
       } else if (mode === "password") {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
@@ -90,42 +92,50 @@ export default function Auth() {
       }
     } catch (e) {
       setMessage(
-        e instanceof Error ? e.message : "Не удалось выполнить запрос",
+        e instanceof Error ? e.message : t("Не удалось выполнить запрос"),
       );
     } finally {
       setBusy(false);
     }
   }
-  if (loading) return <p role="status">Восстанавливаем сессию…</p>;
+  if (loading) return <p role="status">{t("Восстанавливаем сессию…")}</p>;
   if (user && mode !== "password") return <Navigate to="/map" replace />;
   return (
     <main className="auth-page">
       <Brand />
+      <LanguageSelect />
       <section className="card auth-card">
-        <span className="eyebrow">ВАШЕ ХОЗЯЙСТВО. НОВЫЕ ВОЗМОЖНОСТИ.</span>
+        <span className="eyebrow">
+          {t("ВАШЕ ХОЗЯЙСТВО. НОВЫЕ ВОЗМОЖНОСТИ.")}
+        </span>
         <h1>
           {verifyEmail
-            ? "Подтвердите электронную почту"
+            ? t("Подтвердите электронную почту")
             : mode === "register"
-              ? "Создайте аккаунт"
+              ? t("Создайте аккаунт")
               : mode === "reset"
-                ? "Восстановление доступа"
+                ? t("Восстановление доступа")
                 : mode === "password"
-                  ? "Новый пароль"
-                  : "С возвращением"}
+                  ? t("Новый пароль")
+                  : t("С возвращением")}
         </h1>
         {verifyEmail ? (
           <p role="status">
-            Проверьте почту {verifyEmail} и папку «Спам». Откройте ссылку из
-            письма, чтобы завершить регистрацию.
+            {t("Проверьте почту") + " "}
+            {verifyEmail}
+            {" " +
+              t(
+                "и папку «Спам». Откройте ссылку из письма, чтобы завершить регистрацию.",
+              )}
           </p>
         ) : (
-          <p>Начните принимать решения на основе данных.</p>
+          <p>{t("Начните принимать решения на основе данных.")}</p>
         )}
         {!supabase && (
           <p className="notice">
-            Подключите Supabase в .env для регистрации и входа. Демо доступно
-            без аккаунта.
+            {t(
+              "Подключите Supabase в .env для регистрации и входа. Демо доступно без аккаунта.",
+            )}
           </p>
         )}
         {!verifyEmail && (
@@ -133,7 +143,7 @@ export default function Auth() {
             {mode === "register" && (
               <>
                 <label>
-                  Ваше имя
+                  {t("Ваше имя")}
                   <input
                     name="full_name"
                     maxLength={120}
@@ -170,14 +180,14 @@ export default function Auth() {
                   error={errors.region}
                 />
                 <label>
-                  Название хозяйства (необязательно)
+                  {t("Название хозяйства (необязательно)")}
                   <input name="farm_name" maxLength={120} />
                 </label>
               </>
             )}
             {mode !== "password" && (
               <label>
-                Электронная почта
+                {t("Электронная почта")}
                 <input
                   name="email"
                   type="email"
@@ -195,7 +205,7 @@ export default function Auth() {
             )}
             {mode !== "reset" && (
               <label>
-                Пароль
+                {t("Пароль")}
                 <span className="registration-password">
                   <input
                     name="password"
@@ -214,7 +224,9 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setVisible(!visible)}
-                      aria-label={visible ? "Скрыть пароль" : "Показать пароль"}
+                      aria-label={
+                        visible ? t("Скрыть пароль") : t("Показать пароль")
+                      }
                     >
                       {visible ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -229,14 +241,14 @@ export default function Auth() {
             )}
             <Button disabled={!supabase || busy}>
               {busy
-                ? "Подождите…"
+                ? t("Подождите…")
                 : mode === "register"
-                  ? "Зарегистрироваться"
+                  ? t("Зарегистрироваться")
                   : mode === "reset"
-                    ? "Отправить ссылку"
+                    ? t("Отправить ссылку")
                     : mode === "password"
-                      ? "Сохранить пароль"
-                      : "Войти"}
+                      ? t("Сохранить пароль")
+                      : t("Войти")}
             </Button>
           </form>
         )}
@@ -252,7 +264,7 @@ export default function Auth() {
               setVisible(false);
             }}
           >
-            {mode === "register" ? "Уже есть аккаунт" : "Создать аккаунт"}
+            {mode === "register" ? t("Уже есть аккаунт") : t("Создать аккаунт")}
           </button>
           {!verifyEmail && (
             <button
@@ -263,7 +275,7 @@ export default function Auth() {
                 setMessage("");
               }}
             >
-              Забыли пароль?
+              {t("Забыли пароль?")}
             </button>
           )}
         </div>
@@ -274,7 +286,7 @@ export default function Auth() {
             navigate("/map");
           }}
         >
-          Попробовать демо →
+          {t("Попробовать демо →")}
         </Button>
       </section>
     </main>

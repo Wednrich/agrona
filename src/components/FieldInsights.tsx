@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import type { FieldInsight } from "../features/field-insights";
 
 export function FieldInsights({
@@ -16,13 +17,16 @@ export function FieldInsights({
           <h3>{insight.observation}</h3>
           <p>{insight.meaning}</p>
           <p>
-            <strong>Что проверить</strong> {insight.action}
+            <strong>{t("Что проверить")}</strong> {insight.action}
           </p>
           <p className="caption">
             {insight.source} · {insight.period}
           </p>
           <details>
-            <summary>Уверенность: {insight.confidence.toLowerCase()}</summary>
+            <summary>
+              {t("Уверенность:") + " "}
+              {t(insight.confidence).toLowerCase()}
+            </summary>
             <p>{insight.limits}</p>
           </details>
         </article>

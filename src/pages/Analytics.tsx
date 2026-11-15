@@ -1,3 +1,4 @@
+import { t, localize } from "../lib/i18n";
 import GrowingCalendar from "../components/GrowingCalendar";
 import { TerrainAnalytics } from "../components/TerrainAnalytics";
 import { FieldInsights } from "../components/FieldInsights";
@@ -59,9 +60,19 @@ export default function Analytics() {
   const field = farms?.fields.find((f) => f.id === fieldId);
   const [params] = useSearchParams();
   const [tab, setTab] = useState(() =>
-    params.get("tab") === "calendar" ? "Календарь выращивания" : params.get("tab") === "advisor" ? "ИИ-агроном" : params.get("tab") === "sources" ? "Источники" : "Климат",
+    params.get("tab") === "calendar"
+      ? "Календарь выращивания"
+      : params.get("tab") === "advisor"
+        ? "ИИ-агроном"
+        : params.get("tab") === "sources"
+          ? "Источники"
+          : "Климат",
   );
-  const climateTab = !["Растительность", "Источники", "Календарь выращивания"].includes(tab);
+  const climateTab = ![
+    "Растительность",
+    "Источники",
+    "Календарь выращивания",
+  ].includes(tab);
   const [year, setYear] = useState(
     demo ? 2025 : new Date().getUTCFullYear() - 1,
   );
@@ -97,7 +108,7 @@ export default function Analytics() {
     retry: 1,
     queryFn: async () => {
       if (demo && field) return loadDemoPower(field, year);
-      if (!supabase) throw new Error("Supabase не настроен");
+      if (!supabase) throw new Error(t("Supabase не настроен"));
       const { data, error } = await supabase.functions.invoke("nasa-power", {
         body: { fieldId, year },
       });
@@ -106,9 +117,11 @@ export default function Analytics() {
       return data;
     },
   });
-  if (isLoading) return <div className="page">Загрузка…</div>;
-  if (farmsError) return <div className="page error">{farmsError.message}</div>;
-  if (!field) return <FieldPicker title="Аналитика полей" route="analytics" />;
+  if (isLoading) return <div className="page">{t("Загрузка…")}</div>;
+  if (farmsError)
+    return <div className="page error">{localize(farmsError.message)}</div>;
+  if (!field)
+    return <FieldPicker title={t("Аналитика полей")} route="analytics" />;
   const rows = query.data?.observations ?? [];
   const expectedDays =
     (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 86400000;
@@ -150,20 +163,22 @@ export default function Analytics() {
   return (
     <main className="page analytics">
       <Link to="/map" className="back-link">
-        ← К карте хозяйства
+        {t("← К карте хозяйства")}
       </Link>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">ДАННЫЕ, КОТОРЫЕ ПОМОГАЮТ РЕШАТЬ</span>
-          <h1>{field.name}</h1>
+          <span className="eyebrow">
+            {t("ДАННЫЕ, КОТОРЫЕ ПОМОГАЮТ РЕШАТЬ")}
+          </span>
+          <h1>{demo ? t(field.name) : field.name}</h1>
           <p>
-            {Number(field.area_hectares).toFixed(1)} га · Климатическая
-            аналитика
+            {Number(field.area_hectares).toFixed(1)}
+            {" " + t("га · Климатическая аналитика")}
           </p>
         </div>
         <div className="row">
           <select
-            aria-label="Год наблюдений"
+            aria-label={t("Год наблюдений")}
             value={year}
             onChange={(e) => {
               const nextYear = Number(e.target.value);
@@ -203,11 +218,12 @@ export default function Analytics() {
                 }
               }}
             >
-              Обновить данные
+              {t("Обновить данные")}
             </Button>
           )}
           <Link className="button primary" to={"/rotation/" + field.id}>
-            Планировать севооборот <ArrowUpRight size={16} />
+            {t("Планировать севооборот") + " "}
+            <ArrowUpRight size={16} />
           </Link>
         </div>
       </div>
@@ -220,15 +236,19 @@ export default function Analytics() {
           <div>
             <strong>
               {storedDemo
-                ? "NASA POWER · сохранённые наблюдения для Северного поля"
+                ? t("NASA POWER · сохранённые наблюдения для Северного поля")
                 : query.data?.metadata
-                  ? `${query.data.metadata.source}${query.data.cached ? " · из кэша" : ""}`
-                  : "Климатические наблюдения NASA POWER"}
+                  ? `${query.data.metadata.source}${query.data.cached ? " " + t("· из кэша") : ""}`
+                  : t("Климатические наблюдения NASA POWER")}
             </strong>
             <p>
               {storedDemo
-                ? "Сохранённый набор за 2025 год для исходной границы Северного поля."
-                : "Данные климатической сетки для центра поля. Они не измеряют влажность или состав почвы на вашем участке."}
+                ? t(
+                    "Сохранённый набор за 2025 год для исходной границы Северного поля.",
+                  )
+                : t(
+                    "Данные климатической сетки для центра поля. Они не измеряют влажность или состав почвы на вашем участке.",
+                  )}
             </p>
           </div>
         </div>
@@ -249,7 +269,7 @@ export default function Analytics() {
             aria-selected={tab === x}
             className={tab === x ? "active" : ""}
             onClick={() => setTab(x)}
-            key={x}
+            key={t(x)}
           >
             {x}
           </button>
@@ -258,16 +278,20 @@ export default function Analytics() {
       {climateTab && (
         <>
           {(query.isFetching || query.data?.pending) && (
-            <p role="status">Получаем наблюдения NASA POWER за {year} год…</p>
+            <p role="status">
+              {t("Получаем наблюдения NASA POWER за") + " "}
+              {year}
+              {" " + t("год…")}
+            </p>
           )}
           {refreshError && (
             <p role="alert" className="notice">
-              {refreshError}
+              {localize(refreshError)}
             </p>
           )}
           {!refreshError && !query.error && query.data?.warning && (
             <p role="alert" className="notice">
-              {query.data.warning}
+              {localize(query.data.warning)}
             </p>
           )}
           {!refreshError &&
@@ -278,12 +302,14 @@ export default function Analytics() {
             !query.data?.pending &&
             ["Климат", "Вода", "Риски"].includes(tab) && (
               <p className="notice">
-                Наблюдения NASA POWER за {year} год недоступны.
+                {t("Наблюдения NASA POWER за") + " "}
+                {year}
+                {" " + t("год недоступны.")}
               </p>
             )}
           {!refreshError && query.error && (
             <p role="alert" className="notice">
-              {query.error.message}
+              {localize(query.error.message)}
             </p>
           )}
         </>
@@ -292,21 +318,21 @@ export default function Analytics() {
         <section className="card">
           <div className="row">
             <label>
-              Период анализа
+              {t("Период анализа")}
               <select
                 value={climateMode}
                 onChange={(e) =>
                   setClimateMode(e.target.value === "year" ? "year" : "season")
                 }
               >
-                <option value="season">Вегетационный период</option>
-                <option value="year">Полный год</option>
+                <option value="season">{t("Вегетационный период")}</option>
+                <option value="year">{t("Полный год")}</option>
               </select>
             </label>
             {climateMode === "season" && (
               <>
                 <label>
-                  Культура
+                  {t("Культура")}
                   <select
                     value={crop}
                     onChange={(e) => {
@@ -317,13 +343,13 @@ export default function Analytics() {
                   >
                     {Object.entries(cropSeasons).map(([id, option]) => (
                       <option key={id} value={id}>
-                        {option.label}
+                        {t(option.label)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label>
-                  Начало сезона
+                  {t("Начало сезона")}
                   <input
                     type="date"
                     min={yearStart}
@@ -335,7 +361,7 @@ export default function Analytics() {
                   />
                 </label>
                 <label>
-                  Конец сезона
+                  {t("Конец сезона")}
                   <input
                     type="date"
                     min={yearStart}
@@ -351,18 +377,19 @@ export default function Analytics() {
           </div>
           {climateMode === "season" && (
             <p className="caption">
-              Даты приведены для ориентира и не учитывают регион и сорт. Укажите
-              фактические даты выращивания в пределах выбранного года.
+              {t(
+                "Даты приведены для ориентира и не учитывают регион и сорт. Укажите фактические даты выращивания в пределах выбранного года.",
+              )}
             </p>
           )}
           {climate ? (
             <>
               <p>
-                Период:{" "}
+                {t("Период:")}{" "}
                 <strong>
                   {start} — {end}
                 </strong>
-                . {tab === "Климат" && "Исторические данные NASA POWER."}
+                . {tab === "Климат" && t("Исторические данные NASA POWER.")}
               </p>
               {tab === "Климат" &&
                 (rows.length > 0 ||
@@ -371,24 +398,40 @@ export default function Analytics() {
                     !query.data.pending &&
                     !query.data.warning)) && (
                   <p role="status">
-                    Доступно дней: {climate.available} из {climate.days}.
+                    {t("Доступно дней:") + " "}
+                    {climate.available}
+                    {" " + t("из") + " "}
+                    {climate.days}.
                     {climate.absent + climate.partial > 0 &&
-                      ` Пропуски: ${climate.absent} дней без записей, ${climate.partial} дней с неполным набором показателей. Расчёты используют доступные значения.`}
+                      " " +
+                        t(
+                          "Пропуски: {0} дней без записей, {1} дней с неполным набором показателей. Расчёты используют доступные значения.",
+                          climate.absent,
+                          climate.partial,
+                        )}
                   </p>
                 )}
             </>
           ) : (
             <p role="alert" className="notice">
-              Укажите обе даты в пределах {year} года. Начало сезона должно быть
-              не позже конца.
+              {t("Укажите обе даты в пределах") + " "}
+              {year}
+              {" " + t("года. Начало сезона должно быть не позже конца.")}
             </p>
           )}
         </section>
       )}
-      {tab === "Календарь выращивания" && <GrowingCalendar key={field.id} field={field} owner={user?.id} demo={demo} />}
+      {tab === "Календарь выращивания" && (
+        <GrowingCalendar
+          key={field.id}
+          field={field}
+          owner={user?.id}
+          demo={demo}
+        />
+      )}
       {tab === "Климат" && climate && (
         <FieldInsights
-          title="Заключения по полю"
+          title={t("Заключения по полю")}
           insights={[
             ...((query.isFetching || query.data?.pending) && !rows.length
               ? []
@@ -410,54 +453,66 @@ export default function Analytics() {
               [
                 [
                   Thermometer,
-                  "Средняя температура",
+                  t("Средняя температура"),
                   fmt(climateStats.mean),
                   "°C",
-                  "Среднее за дни с данными показывает, насколько тёплым был выбранный период.",
+                  t(
+                    "Среднее за дни с данными показывает, насколько тёплым был выбранный период.",
+                  ),
                 ],
                 [
                   Droplets,
-                  "Осадки за период",
+                  t("Осадки за период"),
                   fmt(climateStats.rain),
-                  "мм",
-                  "Сумма осадков за дни с данными. При пропусках фактическая сумма может быть выше.",
+                  t("мм"),
+                  t(
+                    "Сумма осадков за дни с данными. При пропусках фактическая сумма может быть выше.",
+                  ),
                 ],
                 [
                   Sun,
-                  "Средняя радиация",
+                  t("Средняя радиация"),
                   fmt(climateStats.solar),
-                  "МДж/м²/сут",
-                  "Сколько солнечной энергии в среднем получала поверхность за сутки.",
+                  t("МДж/м²/сут"),
+                  t(
+                    "Сколько солнечной энергии в среднем получала поверхность за сутки.",
+                  ),
                 ],
                 [
                   Thermometer,
-                  "Накопленное тепло (GDD)",
+                  t("Накопленное тепло (GDD)"),
                   fmt(climateGdd),
-                  "°C·сут",
-                  "Сумма превышений средней температуры дня над 5 °C. Это общий ориентир, порог развития зависит от культуры.",
+                  t("°C·сут"),
+                  t(
+                    "Сумма превышений средней температуры дня над 5 °C. Это общий ориентир, порог развития зависит от культуры.",
+                  ),
                 ],
                 [
                   Droplets,
-                  "Влажность воздуха на 2 м",
+                  t("Влажность воздуха на 2 м"),
                   fmt(average(climateRows.map((row) => row.humidity ?? null))),
                   "%",
-                  "Средняя относительная влажность воздуха над поверхностью.",
+                  t(
+                    "Средняя относительная влажность воздуха над поверхностью.",
+                  ),
                 ],
                 [
                   Sun,
-                  "Скорость ветра на 2 м",
+                  t("Скорость ветра на 2 м"),
                   fmt(
                     average(climateRows.map((row) => row.wind_speed ?? null)),
                   ),
-                  "м/с",
-                  "Средняя скорость ветра. По ней нельзя судить о порывах.",
+                  t("м/с"),
+                  t("Средняя скорость ветра. По ней нельзя судить о порывах."),
                 ],
                 [
                   Thermometer,
-                  "Минимум / максимум",
+                  t("Минимум / максимум"),
                   `${fmt(climateStats.min)} / ${fmt(climateStats.max)}`,
                   "°C",
-                  "Самая низкая и самая высокая температуры среди доступных суточных значений.",
+                  t(
+                    "Самая низкая и самая высокая температуры среди доступных суточных значений.",
+                  ),
                 ],
               ] as const
             ).map(([Icon, label, value, unit, explanation]) => (
@@ -475,8 +530,8 @@ export default function Analytics() {
           </div>
           <div className="chart-grid">
             <section className="card">
-              <h3>Температура за выбранный период</h3>
-              <p>Средние месячные значения · °C</p>
+              <h3>{t("Температура за выбранный период")}</h3>
+              <p>{t("Средние месячные значения · °C")}</p>
               <ResponsiveContainer width="100%" height={270}>
                 <AreaChart data={climate.series}>
                   <defs>
@@ -510,7 +565,7 @@ export default function Analytics() {
                   />
                   <Tooltip />
                   <Area
-                    name="Температура, °C"
+                    name={t("Температура, °C")}
                     dataKey="temperature"
                     stroke="#4eaa6e"
                     fill="url(#climate-fill)"
@@ -521,8 +576,8 @@ export default function Analytics() {
               </ResponsiveContainer>
             </section>
             <section className="card">
-              <h3>Распределение осадков</h3>
-              <p>Сумма за выбранные дни каждого месяца · мм</p>
+              <h3>{t("Распределение осадков")}</h3>
+              <p>{t("Сумма за выбранные дни каждого месяца · мм")}</p>
               <ResponsiveContainer width="100%" height={270}>
                 <BarChart data={climate.series}>
                   <CartesianGrid vertical={false} stroke="#edf1ed" />
@@ -540,7 +595,7 @@ export default function Analytics() {
                   />
                   <Tooltip />
                   <Bar
-                    name="Осадки, мм"
+                    name={t("Осадки, мм")}
                     dataKey="rain"
                     fill="#94b6a0"
                     radius={[4, 4, 0, 0]}
@@ -550,27 +605,28 @@ export default function Analytics() {
             </section>
           </div>
           <p className="caption">
-            NASA POWER · Сетка: метеоданные 0.5° × 0.625°, радиация 1° × 1°. «—»
-            означает, что для показателя нет данных за выбранные даты.
+            {t(
+              "NASA POWER · Сетка: метеоданные 0.5° × 0.625°, радиация 1° × 1°. «—» означает, что для показателя нет данных за выбранные даты.",
+            )}
           </p>
           {!demo && climateMode === "year" && (
             <section className="card">
-              <h3>Сравнение сохранённых лет</h3>
+              <h3>{t("Сравнение сохранённых лет")}</h3>
               <p>
-                Полные ряды по температуре и осадкам. Квартальные значения
-                приведены в порядке январь–март, апрель–июнь, июль–сентябрь,
-                октябрь–декабрь.
+                {t(
+                  "Полные ряды по температуре и осадкам. Квартальные значения приведены в порядке январь–март, апрель–июнь, июль–сентябрь, октябрь–декабрь.",
+                )}
               </p>
               {history.length ? (
                 <div style={{ overflowX: "auto" }}>
                   <table>
                     <thead>
                       <tr>
-                        <th>Год</th>
-                        <th>Средняя, °C</th>
-                        <th>Осадки, мм</th>
-                        <th>Температура по кварталам, °C</th>
-                        <th>Осадки по кварталам, мм</th>
+                        <th>{t("Год")}</th>
+                        <th>{t("Средняя, °C")}</th>
+                        <th>{t("Осадки, мм")}</th>
+                        <th>{t("Температура по кварталам, °C")}</th>
+                        <th>{t("Осадки по кварталам, мм")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -603,11 +659,12 @@ export default function Analytics() {
                   </table>
                 </div>
               ) : (
-                <p>Сравнение появится после сохранения наблюдений.</p>
+                <p>{t("Сравнение появится после сохранения наблюдений.")}</p>
               )}
               <p>
-                Отклонение от среднего по предыдущим сохранённым годам:
-                температура{" "}
+                {t(
+                  "Отклонение от среднего по предыдущим сохранённым годам: температура",
+                )}{" "}
                 {fmt(
                   tempBaseline !== null &&
                     metrics.mean !== null &&
@@ -615,7 +672,7 @@ export default function Analytics() {
                     ? metrics.mean - tempBaseline
                     : null,
                 )}{" "}
-                °C, осадки{" "}
+                {t("°C, осадки")}{" "}
                 {fmt(
                   rainBaseline !== null &&
                     metrics.rain !== null &&
@@ -623,8 +680,9 @@ export default function Analytics() {
                     ? metrics.rain - rainBaseline
                     : null,
                 )}{" "}
-                мм. Для каждого показателя нужны минимум три полных предыдущих
-                года из десяти последних сохранённых.
+                {t(
+                  "мм. Для каждого показателя нужны минимум три полных предыдущих года из десяти последних сохранённых.",
+                )}
               </p>
             </section>
           )}
@@ -634,29 +692,36 @@ export default function Analytics() {
         <div className="chart-grid">
           <section className="card">
             <Droplets color="#719d85" />
-            <h2>Водный режим</h2>
-            <p>Орошение: {field.irrigation_type || "не указано"}</p>
+            <h2>{t("Водный режим")}</h2>
+            <p>
+              {t("Орошение:") + " "}
+              {localize(field.irrigation_type) || t("не указано")}
+            </p>
             {seasons.map((s) => (
               <p key={s.id}>
-                {s.year}: {s.irrigation_amount_mm ?? "не указано"} мм по записи
-                фермера
+                {s.year}: {s.irrigation_amount_mm ?? t("не указано")}
+                {" " + t("мм по записи фермера")}
               </p>
             ))}
             {rows.length > 0 && (
               <p>
-                Самый длинный период с осадками менее 1 мм/сут:{" "}
-                <strong>{metrics.longestDry ?? "—"} дней</strong>. Пропуски
-                прерывают расчёт.
+                {t("Самый длинный период с осадками менее 1 мм/сут:")}{" "}
+                <strong>
+                  {metrics.longestDry ?? "—"}
+                  {" " + t("дней")}
+                </strong>
+                {t(". Пропуски прерывают расчёт.")}
               </p>
             )}
           </section>
           <section className="card">
-            <h2>Что эти данные означают</h2>
+            <h2>{t("Что эти данные означают")}</h2>
             <p>
-              Осадки не равны доступной растениям воде. Для оценки полива нужны
-              испарение, тип почвы, стадия развития и местные измерения.
+              {t(
+                "Осадки не равны доступной растениям воде. Для оценки полива нужны испарение, тип почвы, стадия развития и местные измерения.",
+              )}
             </p>
-            <p>Фактическая влажность почвы не измеряется.</p>
+            <p>{t("Фактическая влажность почвы не измеряется.")}</p>
           </section>
         </div>
       )}
@@ -670,8 +735,11 @@ export default function Analytics() {
       {tab === "Источники" && climate && (
         <>
           <p>
-            Выборки для границы этого поля за {start} — {end}. Снимки и
-            модельные оценки описывают отдельные дни или ячейки.
+            {t("Выборки для границы этого поля за") + " "}
+            {start} — {end}
+            {t(
+              ". Снимки и модельные оценки описывают отдельные дни или ячейки.",
+            )}
           </p>
           <FieldDataSources
             field={field}
@@ -695,18 +763,21 @@ export default function Analytics() {
         </div>
       )}
       {tab === "ИИ-агроном" && !hasAdvisorPeriod && (
-        <p role="status">Выберите корректный период на вкладке «Климат».</p>
+        <p role="status">
+          {t("Выберите корректный период на вкладке «Климат».")}
+        </p>
       )}
       {tab === "Почва" && (
         <section className="card">
-          <h2>Почва вашего поля</h2>
+          <h2>{t("Почва вашего поля")}</h2>
           <p>
-            Тип почвы: <strong>{field.soil_type || "не указан"}</strong>
+            {t("Тип почвы:") + " "}
+            <strong>{localize(field.soil_type) || t("не указан")}</strong>
           </p>
-          <p>Ручной тип почвы указан хозяйством.</p>
+          <p>{t("Ручной тип почвы указан хозяйством.")}</p>
           <SoilEstimate boundary={field.boundary} />
           <Link className="button outline" to="/farms">
-            Дополнить сведения →
+            {t("Дополнить сведения →")}
           </Link>
         </section>
       )}
@@ -724,24 +795,28 @@ export default function Analytics() {
         <div className="chart-grid">
           {[
             [
-              "Сухие периоды",
-              `${metrics.longestDry ?? "—"} дней подряд`,
-              "Максимальная серия дней с осадками < 1 мм. Пропуски и отсутствующие даты прерывают серию.",
+              t("Сухие периоды"),
+              t("{0} дней подряд", metrics.longestDry ?? "—"),
+              t(
+                "Максимальная серия дней с осадками < 1 мм. Пропуски и отсутствующие даты прерывают серию.",
+              ),
             ],
             [
-              "Температурный стресс",
-              `${metrics.hotDays ?? "—"} жарких дней`,
-              "Количество наблюдаемых дней с максимальной температурой > 35 °C. Порог является скрининговым, а не пределом конкретной культуры.",
+              t("Температурный стресс"),
+              t("{0} жарких дней", metrics.hotDays ?? "—"),
+              t(
+                "Количество наблюдаемых дней с максимальной температурой > 35 °C. Порог является скрининговым, а не пределом конкретной культуры.",
+              ),
             ],
             [
-              "Заморозки",
-              `${metrics.frostDays ?? "—"} дней`,
-              "Количество дней с минимальной температурой ниже 0 °C.",
+              t("Заморозки"),
+              t("{0} дней", metrics.frostDays ?? "—"),
+              t("Количество дней с минимальной температурой ниже 0 °C."),
             ],
             [
-              "Сильные осадки",
-              `${metrics.heavyRainDays ?? "—"} дней`,
-              "Количество дней с осадками не менее 20 мм.",
+              t("Сильные осадки"),
+              t("{0} дней", metrics.heavyRainDays ?? "—"),
+              t("Количество дней с осадками не менее 20 мм."),
             ],
           ].map(([title, value, method]) => (
             <section className="card" key={title}>
@@ -751,10 +826,11 @@ export default function Analytics() {
               <p>{method}</p>
               <p>
                 NASA POWER · {period} · 0.5° × 0.625° · {rows.length}/
-                {expectedDays} дат. Подсчёт по доступным значениям.
-                Климатическая сетка может не отражать микроклимат поля.
-                Уязвимость зависит от культуры и фазы роста; вероятность ущерба
-                не рассчитывается.
+                {expectedDays}
+                {" " +
+                  t(
+                    "дат. Подсчёт по доступным значениям. Климатическая сетка может не отражать микроклимат поля. Уязвимость зависит от культуры и фазы роста; вероятность ущерба не рассчитывается.",
+                  )}
               </p>
             </section>
           ))}

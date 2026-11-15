@@ -1,3 +1,4 @@
+import { setLanguage } from "../src/lib/i18n";
 import { describe, expect, it } from "vitest";
 import {
   dateAt,
@@ -11,6 +12,8 @@ import {
 } from "../src/features/agroclimate";
 import { normalizePower } from "../supabase/functions/_shared/power";
 import type { Observation } from "../src/lib/types";
+
+setLanguage("ru");
 
 const day = (observation_date: string, temperature_min = 15): Observation => ({
   observation_date,

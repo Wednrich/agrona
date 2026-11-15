@@ -1,3 +1,4 @@
+import { t, getLanguage, localize } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { loadDemoPower } from "../features/demo-power";
 import { loadRotationPower } from "../features/rotation-power";
@@ -26,26 +27,43 @@ export default function FieldWeather({ field }: { field: Field }) {
     retry: false,
   });
   if (query.isFetching)
-    return <p role="status">Загружаем погоду NASA POWER за {year} год.</p>;
+    return (
+      <p role="status">
+        {t("Загружаем погоду NASA POWER за") + " "}
+        {year}
+        {" " + t("год.")}
+      </p>
+    );
   if (query.isError)
     return (
       <p>
-        {query.error.message}{" "}
+        {localize(query.error.message)}{" "}
         <button type="button" onClick={() => void query.refetch()}>
-          Повторить
+          {t("Повторить")}
         </button>
       </p>
     );
   const rows = query.data?.filter((row) => row.precipitation_mm != null) ?? [];
   if (!rows.length)
-    return <p>В NASA POWER нет данных об осадках за {year} год.</p>;
+    return (
+      <p>
+        {t("В NASA POWER нет данных об осадках за") + " "}
+        {year}
+        {" " + t("год.")}
+      </p>
+    );
   const total = rows.reduce((sum, row) => sum + (row.precipitation_mm ?? 0), 0);
   const days = (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 86400000;
   return (
     <p>
-      NASA POWER, {year} год. Осадки за дни с данными —{" "}
-      {total.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} мм. Данные
-      за {rows.length} из {days} дней.
+      NASA POWER, {year}
+      {" " + t("год. Осадки за дни с данными —")}{" "}
+      {total.toLocaleString(getLanguage(), { maximumFractionDigits: 1 })}
+      {" " + t("мм. Данные за") + " "}
+      {rows.length}
+      {" " + t("из") + " "}
+      {days}
+      {" " + t("дней.")}
     </p>
   );
 }

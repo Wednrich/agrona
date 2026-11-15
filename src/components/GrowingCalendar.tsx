@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { centerOfMass } from "@turf/turf";
@@ -128,23 +129,25 @@ export default function GrowingCalendar({
   ];
   const solar = solarDay(start, latitude);
   const totals = (stat: ReturnType<typeof summarize>, unit: string) =>
-    `${fmt(stat.total)} ${unit} · ${stat.days}/${stat.expected} дн.`;
+    t("{0} {1} · {2}/{3} дн.", fmt(stat.total), unit, stat.days, stat.expected);
   return (
     <section
       className="card"
       role="tabpanel"
-      aria-label="Календарь выращивания"
+      aria-label={t("Календарь выращивания")}
     >
-      <h2>Календарь выращивания</h2>
+      <h2>{t("Календарь выращивания")}</h2>
       <p>
-        NASA POWER · {years[0]}–{last}. Оценки климатической сетки у центра
-        поля: погода 0,5° × 0,625°, радиация 1° × 1°. Исторические условия не
-        являются прогнозом.
+        NASA POWER · {years[0]}–{last}
+        {t(
+          ". Оценки климатической сетки у центра поля: погода 0,5° × 0,625°, радиация 1° × 1°. Исторические условия не являются прогнозом.",
+        )}
       </p>
       {demo ? (
         <p>
-          История NASA доступна для сохранённого поля после входа. Здесь
-          доступны астрономические расчёты.
+          {t(
+            "История NASA доступна для сохранённого поля после входа. Здесь доступны астрономические расчёты.",
+          )}
         </p>
       ) : (
         <button
@@ -154,31 +157,34 @@ export default function GrowingCalendar({
           onClick={() => (load ? void weather.refetch() : setLoad(true))}
         >
           {weather.isFetching
-            ? "Получаем исторические годы…"
+            ? t("Получаем исторические годы…")
             : load
-              ? "Повторить загрузку NASA POWER"
-              : "Загрузить пять лет NASA POWER"}
+              ? t("Повторить загрузку NASA POWER")
+              : t("Загрузить пять лет NASA POWER")}
         </button>
       )}
       {!!weather.data?.missing.length && (
-        <p>Недоступные годы: {weather.data.missing.join(", ")}.</p>
+        <p>
+          {t("Недоступные годы:") + " "}
+          {weather.data.missing.join(", ")}.
+        </p>
       )}
       <div className="calendar-controls">
         <label>
-          Культура
+          {t("Культура")}
           <select
             value={crop}
             onChange={(event) => setCrop(event.target.value)}
           >
             {Object.entries(profiles).map(([id, item]) => (
               <option key={id} value={id}>
-                {item.name}
+                {t(item.name)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Дата пробного посева
+          {t("Дата пробного посева")}
           <input
             type="date"
             min={`${years[0]}-01-01`}
@@ -198,14 +204,14 @@ export default function GrowingCalendar({
           />
         </label>
         <label>
-          Известная высота поля, м
+          {t("Известная высота поля, м")}
           <input
             type="number"
             min="-500"
             max="9000"
             value={elevation}
             onChange={(event) => setElevation(event.target.value)}
-            placeholder="Для расчёта ET₀"
+            placeholder={t("Для расчёта ET₀")}
           />
         </label>
       </div>
@@ -214,7 +220,10 @@ export default function GrowingCalendar({
           <div key={m} className="calendar-month">
             <strong>{monthName.format(dateAt(year, m, 15))}</strong>
             <small>
-              {fmt(solar.mean)} МДж/м²/сутки · {solar.days}/{solar.expected} дн.
+              {fmt(solar.mean)}
+              {" " + t("МДж/м²/сутки ·") + " "}
+              {solar.days}/{solar.expected}
+              {" " + t("дн.")}
             </small>
             <div className="calendar-days">
               {days.map((d, i) => (
@@ -223,7 +232,7 @@ export default function GrowingCalendar({
                   type="button"
                   data-status={statuses[i]}
                   aria-pressed={d === iso(start)}
-                  title={`${d} · ${labels[statuses[i]]}`}
+                  title={`${d} · ${t(labels[statuses[i]])}`}
                   onClick={() => setDate(d.slice(5))}
                 >
                   {i + 1}
@@ -234,12 +243,18 @@ export default function GrowingCalendar({
         ))}
       </div>
       <p>
-        Цвет относится к дате посева. Условный период роста для выбранной даты:{" "}
+        {t(
+          "Цвет относится к дате посева. Условный период роста для выбранной даты:",
+        )}{" "}
         {iso(start)} — {window.end ?? "—"}.
       </p>
-      <p>{Object.values(labels).join(" · ")}</p>
+      <p>
+        {Object.values(labels)
+          .map((label) => t(label))
+          .join(" · ")}
+      </p>
       <h3>
-        {labels[window.status]} · {iso(start)}
+        {t(labels[window.status])} · {iso(start)}
       </h3>
       <ul>
         {window.reasons.map((reason) => (
@@ -247,40 +262,60 @@ export default function GrowingCalendar({
         ))}
       </ul>
       <p>
-        Верхняя граница теплового ориентира достигнута в{" "}
-        {complete.filter((result) => result.reachedUpper).length} из{" "}
-        {complete.length} лет с полной информацией для тепловой проверки.
-        Проверено {comparison.length} календарно сопоставимых дат.
+        {t("Верхняя граница теплового ориентира достигнута в")}{" "}
+        {complete.filter((result) => result.reachedUpper).length}
+        {" " + t("из")} {complete.length}
+        {" " +
+          t("лет с полной информацией для тепловой проверки. Проверено") +
+          " "}
+        {comparison.length}
+        {" " + t("календарно сопоставимых дат.")}
       </p>
       <p>
-        GDD: {totals(window.thermal, "°C·сут")} ·{" "}
+        GDD: {totals(window.thermal, t("°C·сут"))} ·{" "}
         {profile.thermal
-          ? `Tbase ${profile.thermal.value.base} °C, цель ${fmt(profile.thermal.value.target?.[0] ?? null)}–${fmt(profile.thermal.value.target?.[1] ?? null)} °C·сут`
-          : "порог неизвестен"}{" "}
-        · достижение нижней / верхней границы: {window.reached ?? "—"} /{" "}
-        {window.reachedUpper ?? "—"}.
+          ? t(
+              "Tbase {0} °C, цель {1}–{2} °C·сут",
+              profile.thermal.value.base,
+              fmt(profile.thermal.value.target?.[0] ?? null),
+              fmt(profile.thermal.value.target?.[1] ?? null),
+            )
+          : t("порог неизвестен")}{" "}
+        {t("· достижение нижней / верхней границы:") + " "}
+        {window.reached ?? "—"} / {window.reachedUpper ?? "—"}.
       </p>
       <p>
-        Длина дня {fmt(solar.daylight)} ч · Солнце в полдень{" "}
-        {fmt(solar.altitude)}° · суточная радиация{" "}
-        {fmt(rows.get(iso(start))?.solar_radiation ?? null)} МДж/м²/сутки.
-        Радиация за условный сезон: {totals(window.radiation, "МДж/м²")}.
+        {t("Длина дня") + " "}
+        {fmt(solar.daylight)}
+        {" " + t("ч · Солнце в полдень")} {fmt(solar.altitude)}
+        {t("° · суточная радиация")}{" "}
+        {fmt(rows.get(iso(start))?.solar_radiation ?? null)}
+        {" " + t("МДж/м²/сутки. Радиация за условный сезон:") + " "}
+        {totals(window.radiation, t("МДж/м²"))}.
       </p>
       <p>
-        Осадки {totals(window.rain, "мм")} · наблюдавшийся сухой отрезок (&lt; 1
-        мм/сутки) {window.rain.days ? window.longestDry : "—"} дн. · влажность
-        воздуха {fmt(window.humidity.mean)}% · средний VPD{" "}
-        {fmt(window.vpd.mean)} кПа.
+        {t("Осадки") + " "}
+        {totals(window.rain, t("мм"))}
+        {" " + t("· наблюдавшийся сухой отрезок (&lt; 1 мм/сутки)") + " "}
+        {window.rain.days ? window.longestDry : "—"}
+        {" " + t("дн. · влажность воздуха") + " "}
+        {fmt(window.humidity.mean)}
+        {t("% · средний VPD")} {fmt(window.vpd.mean)}
+        {" " + t("кПа.")}
       </p>
       <p>
-        ET₀ {totals(window.et0, "мм")} · ETc{" "}
+        ET₀ {totals(window.et0, t("мм"))} · ETc{" "}
         {window.etc
-          ? totals(window.etc, "мм")
-          : "— (нет подтверждённого Kc и длительности фаз)"}{" "}
-        · ET₀ минус осадки {fmt(window.referenceGap)} мм. Это метеорологическая
-        разность. Для оценки запасов влаги нужны характеристики почвы и полив.
+          ? totals(window.etc, t("мм"))
+          : t("— (нет подтверждённого Kc и длительности фаз)")}{" "}
+        {t("· ET₀ минус осадки") + " "}
+        {fmt(window.referenceGap)}
+        {" " +
+          t(
+            "мм. Это метеорологическая разность. Для оценки запасов влаги нужны характеристики почвы и полив.",
+          )}
       </p>
-      <h3>Исторические заморозки</h3>
+      <h3>{t("Исторические заморозки")}</h3>
       {years.map((y) => {
         const frost = frostSeason(rows, y, latitude);
         const radiation = summarize(
@@ -291,25 +326,39 @@ export default function GrowingCalendar({
         return (
           <p key={y}>
             {y}
-            {latitude < 0 ? `–${y + 1}` : ""} · последний весенний:{" "}
-            {frost.last ?? "—"} · первый осенний: {frost.first ?? "—"} · без
-            заморозков: {frost.free ?? "—"} дн. · Tmin ≤ 0 °C:{" "}
-            {frost.observed ? frost.days : "—"} ({frost.observed}/
-            {frost.expected} дн.) · радиация за календарный {y}:{" "}
-            {fmt(radiation.total)} МДж/м² ({radiation.days}/
-            {dateAt(y, 1, 29).getUTCMonth() === 1 ? 366 : 365} дн.).
+            {latitude < 0 ? `–${y + 1}` : ""}
+            {" " + t("· последний весенний:")} {frost.last ?? "—"}
+            {" " + t("· первый осенний:") + " "}
+            {frost.first ?? "—"}
+            {" " + t("· без заморозков:") + " "}
+            {frost.free ?? "—"}
+            {" " + t("дн. · Tmin ≤ 0 °C:")} {frost.observed ? frost.days : "—"}{" "}
+            ({frost.observed}/{frost.expected}
+            {" " + t("дн.) · радиация за календарный") + " "}
+            {y}: {fmt(radiation.total)}
+            {" " + t("МДж/м² (")}
+            {radiation.days}/{dateAt(y, 1, 29).getUTCMonth() === 1 ? 366 : 365}
+            {" " + t("дн.).")}
           </p>
         );
       })}
       <p>
-        Модель {modelVersion}, профиль v{profile.version}. Длина дня рассчитана
-        геометрически, без учёта рельефа горизонта и рефракции. Высота для ET₀
-        берётся из введённого значения. <a href={fao56}>Методика FAO-56</a>.
+        {t("Модель") + " "}
+        {modelVersion}
+        {t(", профиль v")}
+        {profile.version}
+        {t(
+          ". Длина дня рассчитана геометрически, без учёта рельефа горизонта и рефракции. Высота для ET₀ берётся из введённого значения.",
+        ) + " "}
+        <a href={fao56}>{t("Методика FAO-56")}</a>.
       </p>
       <ul>
         {sources.map((source, i) => (
           <li key={source}>
-            <a href={source}>Справочный источник профиля {i + 1}</a>
+            <a href={source}>
+              {t("Справочный источник профиля") + " "}
+              {i + 1}
+            </a>
           </li>
         ))}
       </ul>

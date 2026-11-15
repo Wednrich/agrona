@@ -1,3 +1,4 @@
+import { t, getLanguage } from "../lib/i18n";
 import { useRef, useState } from "react";
 import type { Field } from "../lib/types";
 import { useData } from "../lib/data";
@@ -64,9 +65,9 @@ export default function FieldForm({
         className="card modal wide field-form"
         role="dialog"
         aria-modal="true"
-        aria-label="Поле"
+        aria-label={t("Поле")}
       >
-        <h2>{field ? "Редактировать поле" : "Новое поле"}</h2>
+        <h2>{field ? t("Редактировать поле") : t("Новое поле")}</h2>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -108,7 +109,7 @@ export default function FieldForm({
           }}
         >
           <label>
-            Название поля
+            {t("Название поля")}
             <input
               autoFocus
               name="name"
@@ -125,9 +126,15 @@ export default function FieldForm({
               }}
             >
               <summary>
-                Граница поля
+                {t("Граница поля")}
                 {geometry === initial.preview.geometry
-                  ? ` · ${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 4 }).format(initial.preview.hectares)} га`
+                  ? " " +
+                    t(
+                      "· {0} га",
+                      new Intl.NumberFormat(getLanguage(), {
+                        maximumFractionDigits: 4,
+                      }).format(initial.preview.hectares),
+                    )
                   : ""}
               </summary>
               {boundaryEditorOpened && boundaryEditor}
@@ -143,12 +150,12 @@ export default function FieldForm({
                 checked={soilConfirmed}
                 onChange={(e) => setSoilConfirmed(e.target.checked)}
               />{" "}
-              Мои сведения о почве применимы к новой границе
+              {t("Мои сведения о почве применимы к новой границе")}
             </label>
           )}
           <details className="field-form-details" ref={fieldDetails}>
-            <summary>Уточнить почву и полив</summary>
-            <p>Добавьте известные сведения своего хозяйства.</p>
+            <summary>{t("Уточнить почву и полив")}</summary>
+            <p>{t("Добавьте известные сведения своего хозяйства.")}</p>
             {soil.choice && (
               <button
                 type="button"
@@ -157,7 +164,7 @@ export default function FieldForm({
                   setSoilError("");
                 }}
               >
-                Отменить ручное уточнение почвы
+                {t("Отменить ручное уточнение почвы")}
               </button>
             )}
             <div className="form-grid">
@@ -169,24 +176,26 @@ export default function FieldForm({
                 }}
               />
               <label>
-                Орошение
+                {t("Орошение")}
                 <select name="irrigation_type" defaultValue={initialIrrigation}>
-                  <option value="">Не указано</option>
+                  <option value="">{t("Не указано")}</option>
                   {initialIrrigation &&
                     !irrigationOptions.includes(initialIrrigation) && (
                       <option>{initialIrrigation}</option>
                     )}
                   {irrigationOptions.map((option) => (
-                    <option key={option}>{option}</option>
+                    <option key={option} value={option}>
+                      {t(option)}
+                    </option>
                   ))}
                 </select>
               </label>
             </div>
             {soil.choice === "Другое" && (
               <label>
-                Укажите тип почвы
+                {t("Укажите тип почвы")}
                 <input
-                  placeholder="Например, лугово-каштановая"
+                  placeholder={t("Например, лугово-каштановая")}
                   value={soil.custom}
                   aria-invalid={!!soilError}
                   aria-describedby={soilError ? "custom-soil-error" : undefined}
@@ -212,10 +221,10 @@ export default function FieldForm({
                 busy || !geometry || (needsSoilConfirmation && !soilConfirmed)
               }
             >
-              {busy ? "Сохраняем…" : "Сохранить поле"}
+              {busy ? t("Сохраняем…") : t("Сохранить поле")}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
-              Отмена
+              {t("Отмена")}
             </Button>
           </div>
         </form>

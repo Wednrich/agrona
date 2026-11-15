@@ -1,3 +1,4 @@
+import { t, getLanguage, localize } from "../lib/i18n";
 import { rotationClimateKey } from "../lib/field-write";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
@@ -28,14 +29,40 @@ import { Button } from "../components/ui/button";
 import SoilEstimate, { cachedSoil } from "../components/SoilEstimate";
 import { ExplainAdvisor } from "../components/AiAdvisor";
 
-function RotationAdvisor({ fieldId, scenario, scenarioId }: { fieldId: string; scenario: Scenario; scenarioId: string }) {
-  const period = scenario.constraints.period as { year?: number; start?: string; end?: string } | undefined;
-  if (typeof period?.year !== "number" || typeof period.start !== "string" || typeof period.end !== "string") {
-    return <p className="caption">Для объяснения пересчитайте сценарий с выбранным периодом.</p>;
+function RotationAdvisor({
+  fieldId,
+  scenario,
+  scenarioId,
+}: {
+  fieldId: string;
+  scenario: Scenario;
+  scenarioId: string;
+}) {
+  const period = scenario.constraints.period as
+    { year?: number; start?: string; end?: string } | undefined;
+  if (
+    typeof period?.year !== "number" ||
+    typeof period.start !== "string" ||
+    typeof period.end !== "string"
+  ) {
+    return (
+      <p className="caption">
+        {t("Для объяснения пересчитайте сценарий с выбранным периодом.")}
+      </p>
+    );
   }
-  return <ExplainAdvisor key={scenarioId} scenarioId={scenarioId} scope={{
-    fieldId, year: period.year, start: period.start, end: period.end,
-  }} />;
+  return (
+    <ExplainAdvisor
+      key={scenarioId}
+      scenarioId={scenarioId}
+      scope={{
+        fieldId,
+        year: period.year,
+        start: period.start,
+        end: period.end,
+      }}
+    />
+  );
 }
 export default function Rotation() {
   const { fieldId } = useParams();
@@ -132,10 +159,12 @@ function RotationForm({
       );
     },
   });
-  if (isLoading) return <div className="page">Загрузка…</div>;
-  if (error) return <div className="page error">{error.message}</div>;
+  if (isLoading) return <div className="page">{t("Загрузка…")}</div>;
+  if (error) return <div className="page error">{localize(error.message)}</div>;
   if (!field || !data)
-    return <FieldPicker title="Планирование севооборота" route="rotation" />;
+    return (
+      <FieldPicker title={t("Планирование севооборота")} route="rotation" />
+    );
   const ids = allowed ?? data.crops.map((c) => c.id);
   const water =
     irrigation ??
@@ -165,7 +194,7 @@ function RotationForm({
             .slice(0, horizon)
             .some((id) => !data!.crops.some((c) => c.id === id)))
       )
-        throw new Error("Выберите культуру для каждого года плана.");
+        throw new Error(t("Выберите культуру для каждого года плана."));
       const constraints = {
         allowed: ids,
         excluded,
@@ -254,36 +283,40 @@ function RotationForm({
     }
   }
   const fieldOverview = (
-    <aside className="card rotation-overview" aria-label="Данные о поле">
-      <h2>Данные о поле</h2>
+    <aside className="card rotation-overview" aria-label={t("Данные о поле")}>
+      <h2>{t("Данные о поле")}</h2>
       <details
         className="flow-details"
         key={currentPlan ? "plan" : "explore"}
         open={!currentPlan}
       >
-        <summary>Почва и погода</summary>
+        <summary>{t("Почва и погода")}</summary>
         <SoilEstimate boundary={field.boundary} />
         <p>
-          {field.soil_type || "Ручное уточнение почвы отсутствует"} ·{" "}
-          {field.irrigation_type || "Орошение неизвестно"}
+          {localize(field.soil_type) || t("Ручное уточнение почвы отсутствует")}{" "}
+          · {localize(field.irrigation_type) || t("Орошение неизвестно")}
         </p>
         <p>
-          NASA POWER · {dates.start} — {dates.end}. Погодная сетка 0,5° × 0,625°
-          у центра поля, не измерения на участке.
+          NASA POWER · {dates.start} — {dates.end}
+          {t(
+            ". Погодная сетка 0,5° × 0,625° у центра поля, не измерения на участке.",
+          )}
         </p>
         {climate.isFetching ? (
-          <p role="status">Загружаем историю погоды NASA POWER…</p>
+          <p role="status">{t("Загружаем историю погоды NASA POWER…")}</p>
         ) : (
           overview && (
             <p>
-              Осадки за дни с данными:{" "}
+              {t("Осадки за дни с данными:")}{" "}
               {overview.rain === null
-                ? "нет данных"
-                : `${overview.rain.toFixed(1)} мм`}
-              . Покрытие осадков: {overview.coverage.rain} из {overview.days}{" "}
-              дней. Средняя температура:{" "}
+                ? t("нет данных")
+                : t("{0} мм", overview.rain.toFixed(1))}
+              {t(". Покрытие осадков:") + " "}
+              {overview.coverage.rain}
+              {" " + t("из") + " "}
+              {overview.days} {t("дней. Средняя температура:")}{" "}
               {overview.mean === null
-                ? "нет данных"
+                ? t("нет данных")
                 : `${overview.mean.toFixed(1)} °C`}
               .
             </p>
@@ -293,25 +326,29 @@ function RotationForm({
           Object.values(overview.coverage).some((n) => n < overview.days) &&
           !climate.isFetching && (
             <p>
-              Ряд неполный. Пропуски не считаются нулевыми осадками;
-              климатические выводы ограничены.
+              {t(
+                "Ряд неполный. Пропуски не считаются нулевыми осадками; климатические выводы ограничены.",
+              )}
             </p>
           )}
-        {climate.error && <p role="alert">{climate.error.message}</p>}
+        {climate.error && <p role="alert">{localize(climate.error.message)}</p>}
         {climate.isError && (
           <Button variant="outline" onClick={() => void climate.refetch()}>
-            Повторить загрузку погоды
+            {t("Повторить загрузку погоды")}
           </Button>
         )}
       </details>
       <div className="rotation-history">
         <Link to={`/farms?history=${encodeURIComponent(field.id)}`}>
-          {history.length ? "История посевов" : "Добавить историю посевов"}
+          {history.length
+            ? t("История посевов")
+            : t("Добавить историю посевов")}
         </Link>
         {!history.length && (
           <p>
-            Истории посевов пока нет. Если прошлые посевы неизвестны, можно
-            перейти к плану на будущие годы.
+            {t(
+              "Истории посевов пока нет. Если прошлые посевы неизвестны, можно перейти к плану на будущие годы.",
+            )}
           </p>
         )}
       </div>
@@ -324,25 +361,25 @@ function RotationForm({
         ref={backLink}
         to={`/map?field=${encodeURIComponent(field.id)}`}
       >
-        ← К полю
+        {t("← К полю")}
       </Link>
       <header className="page-heading rotation-heading">
         <div>
           <h1 ref={pageHeading} tabIndex={-1}>
-            Севооборот
+            {t("Севооборот")}
           </h1>
           <p>
             {field.name} ·{" "}
-            {Number(field.area_hectares).toLocaleString("ru-RU", {
+            {Number(field.area_hectares).toLocaleString(getLanguage(), {
               maximumFractionDigits: 1,
             })}{" "}
-            га
+            {t("га")}
           </p>
         </div>
       </header>
       {resultRevision && resultRevision !== resultKey && (
         <p role="status">
-          Условия поля изменились. Сформируйте сравнение заново.
+          {t("Условия поля изменились. Сформируйте сравнение заново.")}
         </p>
       )}
       {activeStep === 1 ? (
@@ -353,11 +390,11 @@ function RotationForm({
           <div className="rotation-inputs">
             <section className="card rotation-plan">
               <h2 ref={formHeading} tabIndex={-1}>
-                {currentPlan ? "Ваш план по годам" : "Подбор вариантов"}
+                {currentPlan ? t("Ваш план по годам") : t("Подбор вариантов")}
               </h2>
               <div className="form-grid">
                 <label>
-                  Текущий план для сравнения
+                  {t("Текущий план для сравнения")}
                   <select
                     value={
                       currentPlan === "manual"
@@ -372,21 +409,23 @@ function RotationForm({
                     }}
                   >
                     <option value="">
-                      Плана пока нет — посмотреть варианты
+                      {t("Плана пока нет — посмотреть варианты")}
                     </option>
-                    <option value="manual">Ввести мой план по годам</option>
+                    <option value="manual">
+                      {t("Ввести мой план по годам")}
+                    </option>
                     {plans.map(
                       (plan) =>
                         plan.id && (
                           <option key={plan.id} value={plan.id}>
-                            {plan.name}
+                            {localize(plan.name)}
                           </option>
                         ),
                     )}
                   </select>
                 </label>
                 <label>
-                  На сколько лет
+                  {t("На сколько лет")}
                   <select
                     value={horizon}
                     onChange={(e) => {
@@ -411,9 +450,10 @@ function RotationForm({
                   {Array.from({ length: horizon }, (_, i) => (
                     <div className="plan-year" key={i}>
                       <label>
-                        Год {i + 1}
+                        {t("Год") + " "}
+                        {i + 1}
                         <select
-                          aria-label={`Культура на год ${i + 1}`}
+                          aria-label={t("Культура на год {0}", i + 1)}
                           value={manualSequence[i] ?? ""}
                           onChange={(event) => {
                             const crop = event.target.value;
@@ -426,10 +466,10 @@ function RotationForm({
                             );
                           }}
                         >
-                          <option value="">Выберите культуру</option>
+                          <option value="">{t("Выберите культуру")}</option>
                           {data.crops.map((crop) => (
                             <option key={crop.id} value={crop.id}>
-                              {crop.name}
+                              {t(crop.name)}
                             </option>
                           ))}
                         </select>
@@ -448,7 +488,7 @@ function RotationForm({
                             );
                           }}
                         />
-                        Оставить в альтернативах
+                        {t("Оставить в альтернативах")}
                       </label>
                     </div>
                   ))}
@@ -457,40 +497,40 @@ function RotationForm({
               {selectedPlan && (
                 <p>
                   {selectedPlan.crop_sequence
-                    .map(
-                      (id) => data.crops.find((crop) => crop.id === id)?.name,
+                    .map((id) =>
+                      t(data.crops.find((crop) => crop.id === id)?.name ?? ""),
                     )
                     .join(" → ")}
                 </p>
               )}
             </section>
             <section className="card rotation-goals">
-              <h2>Что для вас важно?</h2>
-              <p>Выберите цели для сравнения вариантов.</p>
+              <h2>{t("Что для вас важно?")}</h2>
+              <p>{t("Выберите цели для сравнения вариантов.")}</p>
               <div className="goal-grid">
                 {[
                   [
                     "water",
-                    "Экономить воду",
-                    "Учитывать потребность культур в воде",
+                    t("Экономить воду"),
+                    t("Учитывать потребность культур в воде"),
                     Droplets,
                   ],
                   [
                     "soil",
-                    "Здоровье почвы",
-                    "Разнообразие семейств и бобовые",
+                    t("Здоровье почвы"),
+                    t("Разнообразие семейств и бобовые"),
                     Leaf,
                   ],
                   [
                     "climate",
-                    "Снизить климатический риск",
-                    "Учитывать доступную историю погоды",
+                    t("Снизить климатический риск"),
+                    t("Учитывать доступную историю погоды"),
                     ShieldCheck,
                   ],
                   [
                     "economy",
-                    "Экономическая устойчивость",
-                    "Выявить, каких данных о затратах не хватает",
+                    t("Экономическая устойчивость"),
+                    t("Выявить, каких данных о затратах не хватает"),
                     Coins,
                   ],
                 ].map(([id, title, description, Icon]) => {
@@ -521,10 +561,10 @@ function RotationForm({
               </div>
             </section>
             <details className="card flow-details rotation-settings">
-              <summary>Настройки сезона и ограничения</summary>
+              <summary>{t("Настройки сезона и ограничения")}</summary>
               <div className="form-grid">
                 <label>
-                  Длина доступного сезона, дней
+                  {t("Длина доступного сезона, дней")}
                   <input
                     type="number"
                     min={1}
@@ -539,17 +579,18 @@ function RotationForm({
                     checked={water}
                     onChange={(e) => setIrrigation(e.target.checked)}
                   />{" "}
-                  Доступно орошение
+                  {t("Доступно орошение")}
                 </label>
               </div>
               <p className="caption">
-                Если доступность полива неизвестна, оставьте отметку снятой:
-                наличие достаточного объёма воды не предполагается.
+                {t(
+                  "Если доступность полива неизвестна, оставьте отметку снятой: наличие достаточного объёма воды не предполагается.",
+                )}
               </p>
-              <h3>Исторический сезон NASA POWER</h3>
+              <h3>{t("Исторический сезон NASA POWER")}</h3>
               <div className="form-grid">
                 <label>
-                  Год наблюдений
+                  {t("Год наблюдений")}
                   <input
                     type="number"
                     min={1984}
@@ -563,7 +604,7 @@ function RotationForm({
                   />
                 </label>
                 <label>
-                  Начало периода
+                  {t("Начало периода")}
                   <input
                     type="date"
                     value={dates.start}
@@ -573,7 +614,7 @@ function RotationForm({
                   />
                 </label>
                 <label>
-                  Конец периода
+                  {t("Конец периода")}
                   <input
                     type="date"
                     value={dates.end}
@@ -584,10 +625,11 @@ function RotationForm({
                 </label>
               </div>
               <p className="caption">
-                При подборе культур учитывается меньшая из двух величин: длина
-                доступного сезона и длительность выбранного периода.
+                {t(
+                  "При подборе культур учитывается меньшая из двух величин: длина доступного сезона и длительность выбранного периода.",
+                )}
               </p>
-              <h3>Культуры для подбора</h3>
+              <h3>{t("Культуры для подбора")}</h3>
               <div className="crop-options">
                 {data.crops.map((crop) => (
                   <label className="check-label" key={crop.id}>
@@ -608,19 +650,21 @@ function RotationForm({
                         }
                       }}
                     />
-                    {crop.name}
+                    {t(crop.name)}
                   </label>
                 ))}
               </div>
             </details>
             {!selectedPeriod && (
               <p className="error">
-                В настройках сезона укажите даты в пределах выбранного года.
+                {t(
+                  "В настройках сезона укажите даты в пределах выбранного года.",
+                )}
               </p>
             )}
             {(!Number.isInteger(days) || days < 1 || days > 366) && (
               <p className="error">
-                В настройках укажите длину сезона от 1 до 366 дней.
+                {t("В настройках укажите длину сезона от 1 до 366 дней.")}
               </p>
             )}
             <div className="rotation-submit">
@@ -643,10 +687,10 @@ function RotationForm({
                 onClick={generate}
               >
                 {climate.isFetching
-                  ? "Загружаем погоду…"
+                  ? t("Загружаем погоду…")
                   : currentPlan
-                    ? "Сравнить планы"
-                    : "Подобрать варианты"}{" "}
+                    ? t("Сравнить планы")
+                    : t("Подобрать варианты")}{" "}
                 <ArrowRight size={16} />
               </Button>
             </div>
@@ -659,12 +703,13 @@ function RotationForm({
             <div>
               <h2 ref={resultHeading} tabIndex={-1}>
                 {strategies[0]?.constraints.currentSequence
-                  ? "Сравнение планов"
-                  : "Варианты для поля"}
+                  ? t("Сравнение планов")
+                  : t("Варианты для поля")}
               </h2>
               <p>
-                Для решения о посеве уточните сорт и местные сроки посева и
-                уборки.
+                {t(
+                  "Для решения о посеве уточните сорт и местные сроки посева и уборки.",
+                )}
               </p>
             </div>
             <Button
@@ -674,7 +719,7 @@ function RotationForm({
                 setMessage("");
               }}
             >
-              Изменить план и цели
+              {t("Изменить план и цели")}
             </Button>
           </div>
           {message && (
@@ -684,22 +729,26 @@ function RotationForm({
           )}
           {!!strategies.length && sameSequences && (
             <p className="notice">
-              После пересчёта последовательности остались прежними.
+              {t("После пересчёта последовательности остались прежними.")}
             </p>
           )}
           {!strategies.length && (
             <p className="notice" role="status">
-              Ни одна культура не подходит под выбранный список и длину сезона.
-              Измените ограничения или выберите сохранённый план, чтобы сравнить
-              его с условиями.
+              {t(
+                "Ни одна культура не подходит под выбранный список и длину сезона. Измените ограничения или выберите сохранённый план, чтобы сравнить его с условиями.",
+              )}
             </p>
           )}
           {strategies.length > 0 && strategies.length < 3 && (
             <p className="notice" role="status">
-              {strategies[0].analysis_result.warnings[0]}
+              {localize(strategies[0].analysis_result.warnings[0] ?? "")}
             </p>
           )}
-          {!demo && <p className="caption">Чтобы получить объяснение плана, сначала сохраните его.</p>}
+          {!demo && (
+            <p className="caption">
+              {t("Чтобы получить объяснение плана, сначала сохраните его.")}
+            </p>
+          )}
           <div
             className={`strategy-grid${strategies[0]?.constraints.currentSequence ? " strategy-comparison" : ""}`}
           >
@@ -708,84 +757,106 @@ function RotationForm({
                 <span className="eyebrow">
                   {s.constraints.currentSequence
                     ? i === 0
-                      ? "ВАШ ПЛАН"
-                      : `ВАРИАНТ 0${i}`
-                    : `КАНДИДАТ ${i + 1}`}
+                      ? t("ВАШ ПЛАН")
+                      : t("ВАРИАНТ 0{0}", i)
+                    : t("КАНДИДАТ {0}", i + 1)}
                 </span>
-                <h2>{s.name}</h2>
-                <p>Полный цикл зависит от сорта и даты посева. Проверьте исторические ограничения в <Link to={`/analytics/${field.id}?tab=calendar`}>календаре выращивания</Link>.</p>
+                <h2>{localize(s.name)}</h2>
+                <p>
+                  {t(
+                    "Полный цикл зависит от сорта и даты посева. Проверьте исторические ограничения в",
+                  ) + " "}
+                  <Link to={`/analytics/${field.id}?tab=calendar`}>
+                    {t("календаре выращивания")}
+                  </Link>
+                  .
+                </p>
                 <div className="sequence">
                   {s.crop_sequence.map((id, y) => (
                     <div key={y}>
                       <span>
                         {Number.isFinite(Number(s.constraints.planYear))
                           ? Number(s.constraints.planYear) + y
-                          : `Год ${y + 1}`}
+                          : t("Год {0}", y + 1)}
                       </span>
                       <strong>
-                        {data.crops.find((c) => c.id === id)?.name}
+                        {t(data.crops.find((c) => c.id === id)?.name ?? "")}
                       </strong>
                       {i > 0 && !!s.constraints.currentSequence && (
                         <small>
                           {id === strategies[0].crop_sequence[y]
-                            ? "Без изменений"
-                            : `Вместо: ${data.crops.find((c) => c.id === strategies[0].crop_sequence[y])?.name ?? "неизвестно"}`}
+                            ? t("Без изменений")
+                            : t(
+                                "Вместо: {0}",
+                                t(
+                                  data.crops.find(
+                                    (c) =>
+                                      c.id === strategies[0].crop_sequence[y],
+                                  )?.name ?? "неизвестно",
+                                ),
+                              )}
                         </small>
                       )}
                     </div>
                   ))}
                 </div>
-                <h3>Что показывает сравнение</h3>
+                <h3>{t("Что показывает сравнение")}</h3>
                 <ul>
                   {s.analysis_result.reasons.slice(0, 4).map((r) => (
-                    <li key={r}>{r}</li>
+                    <li key={r}>{localize(r)}</li>
                   ))}
                 </ul>
                 <details className="flow-details strategy-details">
-                  <summary>Риски, данные и расчёт</summary>
+                  <summary>{t("Риски, данные и расчёт")}</summary>
                   {s.analysis_result.reasons.length > 4 && (
                     <ul>
                       {s.analysis_result.reasons.slice(4).map((r) => (
-                        <li key={r}>{r}</li>
+                        <li key={r}>{localize(r)}</li>
                       ))}
                     </ul>
                   )}
                   <p>
-                    Справочная оценка за сезон:{" "}
-                    <strong>{s.analysis_result.score}</strong> балла.
+                    {t("Справочная оценка за сезон:")}{" "}
+                    <strong>{s.analysis_result.score}</strong>
+                    {" " + t("балла.")}
                   </p>
                   <p className="caption">
-                    Веса критериев: почва ×{rotationWeights(s.priorities).soil},
-                    вода ×{rotationWeights(s.priorities).water}, климат ×
+                    {t("Веса критериев: почва ×")}
+                    {rotationWeights(s.priorities).soil}
+                    {t(", вода ×")}
+                    {rotationWeights(s.priorities).water}
+                    {t(", климат ×")}
                     {rotationWeights(s.priorities).climate}.
                   </p>
                   {s.analysis_result.criteria && (
                     <p className="caption">
-                      Почва и история {s.analysis_result.criteria.soil} · Вода{" "}
-                      {s.analysis_result.criteria.water} · Климат{" "}
-                      {s.analysis_result.criteria.climate ?? "нет данных"}
+                      {t("Почва и история") + " "}
+                      {s.analysis_result.criteria.soil}
+                      {" " + t("· Вода")} {s.analysis_result.criteria.water}
+                      {" " + t("· Климат")}{" "}
+                      {s.analysis_result.criteria.climate ?? t("нет данных")}
                     </p>
                   )}
                   {!!s.analysis_result.risks?.length && (
                     <>
-                      <h3>Риски и ограничения</h3>
+                      <h3>{t("Риски и ограничения")}</h3>
                       <ul className="warnings">
                         {s.analysis_result.risks.map((r) => (
-                          <li key={r}>{r}</li>
+                          <li key={r}>{localize(r)}</li>
                         ))}
                       </ul>
                     </>
                   )}
-                  <h3>Использованные данные</h3>
+                  <h3>{t("Использованные данные")}</h3>
                   <ul>
                     {s.analysis_result.sources?.map((r) => (
-                      <li key={r}>{r}</li>
+                      <li key={r}>{localize(r)}</li>
                     ))}
                   </ul>
-                  <h3>Каких данных не хватает</h3>
+                  <h3>{t("Каких данных не хватает")}</h3>
                   <ul className="warnings">
                     {s.analysis_result.warnings.map((r) => (
-                      <li key={r}>{r}</li>
+                      <li key={r}>{localize(r)}</li>
                     ))}
                   </ul>
                 </details>
@@ -811,7 +882,7 @@ function RotationForm({
                         },
                       } as unknown as Record<string, unknown>);
                       setSaved({ ...saved, [s.name]: scenarioId });
-                      setMessage("Сценарий и сравнение сохранены");
+                      setMessage(t("Сценарий и сравнение сохранены"));
                     } catch (e) {
                       setMessage(String(e));
                     } finally {
@@ -821,13 +892,17 @@ function RotationForm({
                 >
                   <Bookmark size={15} />
                   {Object.hasOwn(saved, s.name)
-                    ? "Сохранено"
+                    ? t("Сохранено")
                     : i === 0
-                      ? "Сохранить сравнение"
-                      : "Сохранить этот вариант"}
+                      ? t("Сохранить сравнение")
+                      : t("Сохранить этот вариант")}
                 </Button>
                 {!demo && Object.hasOwn(saved, s.name) && (
-                  <RotationAdvisor fieldId={field.id} scenario={s} scenarioId={saved[s.name]} />
+                  <RotationAdvisor
+                    fieldId={field.id}
+                    scenario={s}
+                    scenarioId={saved[s.name]}
+                  />
                 )}
               </article>
             ))}
@@ -835,24 +910,27 @@ function RotationForm({
         </>
       )}
       <section className="saved-scenarios">
-        <h2>Сохранённые сценарии</h2>
+        <h2>{t("Сохранённые сценарии")}</h2>
         {data.scenarios.some((s) => s.field_id === field.id) && (
           <p className="caption">
-            Это снимки прошлых расчётов. Для текущих приоритетов сформируйте
-            стратегии выше.
+            {t(
+              "Это снимки прошлых расчётов. Для текущих приоритетов сформируйте стратегии выше.",
+            )}
           </p>
         )}
         {data.scenarios
           .filter((s) => s.field_id === field.id)
           .map((s, i) => (
             <details className="card" key={s.id ?? i}>
-              <summary>{s.name}</summary>
+              <summary>{localize(s.name)}</summary>
               <p>
                 {s.constraints.inputRevision
                   ? s.constraints.inputRevision === inputRevision
-                    ? "Снимок соответствует текущим данным поля."
-                    : "Условия поля изменились. Требуется пересчёт."
-                  : "Старый результат: версия исходных данных неизвестна. Требуется пересчёт."}
+                    ? t("Снимок соответствует текущим данным поля.")
+                    : t("Условия поля изменились. Требуется пересчёт.")
+                  : t(
+                      "Старый результат: версия исходных данных неизвестна. Требуется пересчёт.",
+                    )}
               </p>
               <Button
                 variant="outline"
@@ -915,33 +993,42 @@ function RotationForm({
                   setStep(2);
                   setMessage(
                     s.constraints.inputRevision === inputRevision
-                      ? "Открыт сохранённый снимок сравнения."
-                      : "Открыт прошлый результат. Данные изменились или их версия неизвестна — пересчитайте перед использованием.",
+                      ? t("Открыт сохранённый снимок сравнения.")
+                      : t(
+                          "Открыт прошлый результат. Данные изменились или их версия неизвестна — пересчитайте перед использованием.",
+                        ),
                   );
                 }}
               >
-                Открыть сохранённое сравнение
+                {t("Открыть сохранённое сравнение")}
               </Button>
               <p>
                 {s.crop_sequence
-                  .map(
-                    (id) =>
+                  .map((id) =>
+                    t(
                       data.crops.find((c) => c.id === id)?.name ??
-                      "Неизвестная культура",
+                        "Неизвестная культура",
+                    ),
                   )
                   .join(" → ")}
               </p>
               <ul>
                 {s.analysis_result.reasons.map((r) => (
-                  <li key={r}>{r}</li>
+                  <li key={r}>{localize(r)}</li>
                 ))}
               </ul>
-              <p>{s.analysis_result.warnings.join(" ")}</p>
-              {!demo && s.id && <RotationAdvisor fieldId={field.id} scenario={s} scenarioId={s.id} />}
+              <p>{s.analysis_result.warnings.map(localize).join(" ")}</p>
+              {!demo && s.id && (
+                <RotationAdvisor
+                  fieldId={field.id}
+                  scenario={s}
+                  scenarioId={s.id}
+                />
+              )}
             </details>
           ))}
         {!data.scenarios.some((s) => s.field_id === field.id) && (
-          <p>Сохраните стратегию, чтобы вернуться к ней позже.</p>
+          <p>{t("Сохраните стратегию, чтобы вернуться к ней позже.")}</p>
         )}
       </section>
     </main>

@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import type { Observation } from "../lib/types";
 
 export const modelVersion = "agroclimate-1";
@@ -304,34 +305,46 @@ export function evaluateWindow(
   const thermalComplete = !!model?.target && thermal.days === end && end > 0;
   const reasons: string[] = [];
   if (!profile.thermal?.calibrated)
-    reasons.push("Нет тепловой калибровки местного сорта.");
+    reasons.push(t("Нет тепловой калибровки местного сорта."));
   if (!model?.target)
-    reasons.push("Нет проверенных Tbase и/или целевого GDD для этого профиля.");
+    reasons.push(
+      t("Нет проверенных Tbase и/или целевого GDD для этого профиля."),
+    );
   else if (!thermalComplete)
-    reasons.push("Есть пропуски Tmin или Tmax в расчётном сезоне.");
+    reasons.push(t("Есть пропуски Tmin или Tmax в расчётном сезоне."));
   else if (!reached)
-    reasons.push("Тепловой ориентир не достигнут за расчётный сезон.");
+    reasons.push(t("Тепловой ориентир не достигнут за расчётный сезон."));
   else
     reasons.push(
-      "Историческая температура позволяла достичь справочного теплового ориентира.",
+      t(
+        "Историческая температура позволяла достичь справочного теплового ориентира.",
+      ),
     );
   if (frost)
     reasons.push(
-      `Дней с Tmin ≤ 0 °C: ${frost}. Это сигнал для проверки, чувствительность зависит от фазы.`,
+      t(
+        "Дней с Tmin ≤ 0 °C: {0}. Это сигнал для проверки, чувствительность зависит от фазы.",
+        frost,
+      ),
     );
   if (critical || hot)
     reasons.push(
-      `Дней ниже порога фазы: ${critical}; выше порога жары: ${hot}.`,
+      t("Дней ниже порога фазы: {0}; выше порога жары: {1}.", critical, hot),
     );
   if (profile.sowing)
     reasons.push(
-      `Проверить температуру почвы на глубине посева (от ${profile.sowing.value.minSoil} °C по региональному ориентиру).`,
+      t(
+        "Проверить температуру почвы на глубине посева (от {0} °C по региональному ориентиру).",
+        profile.sowing.value.minSoil,
+      ),
     );
-  else reasons.push("Нет проверенного местного порога для посева.");
+  else reasons.push(t("Нет проверенного местного порога для посева."));
   if (profile.season === "winter")
-    reasons.push("Перезимовка и яровизация требуют отдельной модели.");
+    reasons.push(t("Перезимовка и яровизация требуют отдельной модели."));
   reasons.push(
-    "Обеспеченность влагой неизвестна без запасов почвы, эффективных осадков и полива.",
+    t(
+      "Обеспеченность влагой неизвестна без запасов почвы, эффективных осадков и полива.",
+    ),
   );
   // A reference hybrid or a calendar duration cannot certify a whole crop cycle.
   const status: Status =

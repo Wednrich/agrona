@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { writeField } from "./field-write";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./auth";
@@ -26,7 +27,7 @@ export function useData() {
     enabled: demo || !!user,
     queryFn: async () => {
       if (demo) return demoData();
-      if (!supabase) throw new Error("Supabase не настроен");
+      if (!supabase) throw new Error(t("Supabase не настроен"));
       const tables = [
         "farms",
         "field_geojson",
@@ -66,14 +67,14 @@ export function useData() {
         Number(row.year) < 1900 ||
         Number(row.year) > 2200
       )
-        throw new Error("Укажите допустимый год.");
+        throw new Error(t("Укажите допустимый год."));
       for (const name of ["yield_tons_per_hectare", "irrigation_amount_mm"]) {
         if (
           row[name] !== null &&
           (!Number.isFinite(row[name]) || Number(row[name]) < 0)
         )
           throw new Error(
-            "Урожайность и орошение не могут быть отрицательными.",
+            t("Урожайность и орошение не могут быть отрицательными."),
           );
       }
       if (
@@ -81,7 +82,7 @@ export function useData() {
         row.harvest_date &&
         String(row.harvest_date) < String(row.planting_date)
       )
-        throw new Error("Дата уборки должна быть не раньше даты посева.");
+        throw new Error(t("Дата уборки должна быть не раньше даты посева."));
     }
     if (
       !remove &&
@@ -89,9 +90,10 @@ export function useData() {
         (table === "fields" && (row.id == null || "name" in row))) &&
       !String(row.name ?? "").trim()
     )
-      throw new Error("Введите название.");
+      throw new Error(t("Введите название."));
     if (demo) {
-      if (table === "profiles") throw new Error("Профиль недоступен в демо.");
+      if (table === "profiles")
+        throw new Error(t("Профиль недоступен в демо."));
       const data = demoData();
       const prop = (
         {
@@ -129,16 +131,16 @@ export function useData() {
               x.field_id === row.field_id && x.year === row.year && x.id !== id,
           )
         )
-          throw new Error("Сезон за этот год уже существует.");
+          throw new Error(t("Сезон за этот год уже существует."));
         const index = arr.findIndex((x) => x.id === id);
         if (index >= 0) arr[index] = { ...arr[index], ...row, id };
         else if (table === "fields" && row.id != null)
-          throw new Error("Поле не найдено.");
+          throw new Error(t("Поле не найдено."));
         else arr.push({ ...row, id });
       }
       localStorage.setItem(demoKey, JSON.stringify(data));
     } else {
-      if (!supabase) throw new Error("Supabase не настроен");
+      if (!supabase) throw new Error(t("Supabase не настроен"));
       if (table === "fields" && !remove) {
         const fieldId = await writeField(supabase, row);
         savedFieldId = fieldId;

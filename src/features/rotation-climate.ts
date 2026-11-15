@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import type { Observation } from "../lib/types";
 import { average, climateSummary, selectClimatePeriod } from "./climate";
 
@@ -24,7 +25,7 @@ export function summarizeRotationClimate(
   );
   if (!selected)
     throw new Error(
-      "Укажите корректные даты в пределах одного исторического года.",
+      t("Укажите корректные даты в пределах одного исторического года."),
     );
   const number = (value: number | null) =>
     Number.isFinite(value) && value !== -999 ? value : null;

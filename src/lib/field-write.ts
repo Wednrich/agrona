@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Field } from "./types";
 
@@ -19,7 +20,7 @@ export async function writeField(
     .single();
   if (result.error) throw new Error(result.error.message);
   if (!result.data || (id != null && result.data.id !== id))
-    throw new Error("Не удалось сохранить указанное поле.");
+    throw new Error(t("Не удалось сохранить указанное поле."));
   return result.data.id as string;
 }
 

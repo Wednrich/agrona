@@ -1,3 +1,4 @@
+import { t, getLanguage, localize } from "../lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import {
@@ -35,7 +36,9 @@ export function TerrainAnalytics({
       if (error instanceof FunctionsHttpError) {
         if (error.context.status === 404)
           throw new Error(
-            "Расчёт уклона пока недоступен. Оценка высоты SRTM загружается отдельно.",
+            t(
+              "Расчёт уклона пока недоступен. Оценка высоты SRTM загружается отдельно.",
+            ),
           );
         const response = await error.context
           .clone()
@@ -43,56 +46,67 @@ export function TerrainAnalytics({
           .catch(() => null);
         throw new Error(
           response?.message ??
-            "Сервис рельефа недоступен. Проверьте развёртывание.",
+            t("Сервис рельефа недоступен. Проверьте развёртывание."),
         );
       }
-      if (error) throw new Error("Нет соединения с сервисом рельефа.");
+      if (error) throw new Error(t("Нет соединения с сервисом рельефа."));
       return data;
     },
   });
   const result = query.data;
   const metrics = result?.metrics;
   const format = (value: number) =>
-    new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(value);
+    new Intl.NumberFormat(getLanguage(), { maximumFractionDigits: 1 }).format(
+      value,
+    );
   const waiting = query.isFetching || result?.status === "loading";
   return (
-    <section className="card field-insights" aria-label="Рельеф">
-      <h2>Рельеф</h2>
+    <section className="card field-insights" aria-label={t("Рельеф")}>
+      <h2>{t("Рельеф")}</h2>
       <p className="caption">
-        NASA SRTMGL1 v003 · 1 угловая секунда (около 30 м по широте) · февраль
-        2000 · OpenTopography{result?.cached ? " · из кэша" : ""}
+        {t(
+          "NASA SRTMGL1 v003 · 1 угловая секунда (около 30 м по широте) · февраль 2000 · OpenTopography",
+        )}
+        {result?.cached ? " " + t("· из кэша") : ""}
       </p>
       {demo && (
         <p>
-          Расчёт уклона доступен в аккаунте. Оценка высоты SRTM загружается
-          отдельно.
+          {t(
+            "Расчёт уклона доступен в аккаунте. Оценка высоты SRTM загружается отдельно.",
+          )}
         </p>
       )}
-      {waiting && <p role="status">Загружаем и рассчитываем рельеф…</p>}
+      {waiting && <p role="status">{t("Загружаем и рассчитываем рельеф…")}</p>}
       {query.error && (
         <p className="error" role="alert">
-          {query.error.message}
+          {localize(query.error.message)}
         </p>
       )}
       {result?.message && !waiting && (
         <p className="notice" role="status">
-          {result.message}
+          {localize(result.message)}
         </p>
       )}
       {!waiting && (query.error || result?.status === "error") && (
         <Button variant="outline" onClick={() => void query.refetch()}>
-          Повторить
+          {t("Повторить")}
         </Button>
       )}
       {metrics && (
         <>
-          {result.status === "ready" && <p role="status">Готово</p>}
+          {result.status === "ready" && <p role="status">{t("Готово")}</p>}
           <p>
-            Пригодные ячейки: высота {metrics.elevationCells} из {metrics.cells}
-            , уклон {metrics.slopeCells} из {metrics.cells}.
+            {t("Пригодные ячейки: высота") + " "}
+            {metrics.elevationCells}
+            {" " + t("из") + " "}
+            {metrics.cells}
+            {t(", уклон") + " "}
+            {metrics.slopeCells}
+            {" " + t("из") + " "}
+            {metrics.cells}.
           </p>
           <dl>
-            <dt>Высота над геоидом EGM96, мин. / макс. / средняя</dt>
+            <dt>{t("Высота над геоидом EGM96, мин. / макс. / средняя")}</dt>
             <dd>
               {metrics.elevation
                 ? [
@@ -101,33 +115,42 @@ export function TerrainAnalytics({
                     metrics.elevation.mean,
                   ]
                     .map(format)
-                    .join(" / ") + " м"
-                : "Недостаточно данных"}
+                    .join(" / ") +
+                  (" " + t("м"))
+                : t("Недостаточно данных")}
             </dd>
-            <dt>Уклон, средний / максимальный</dt>
+            <dt>{t("Уклон, средний / максимальный")}</dt>
             <dd>
               {metrics.slope
                 ? [metrics.slope.mean, metrics.slope.max]
                     .map(format)
                     .join(" / ") + "°"
-                : "Недостаточно данных"}
+                : t("Недостаточно данных")}
             </dd>
           </dl>
           {result.status === "ready" && metrics.elevation && metrics.slope && (
             <FieldInsights
-              title="Заключение по рельефу"
+              title={t("Заключение по рельефу")}
               insights={[
                 {
                   id: "srtm-terrain",
-                  observation: `Перепад высот в выборке ${format(metrics.elevation.max - metrics.elevation.min)} м, средний уклон ${format(metrics.slope.mean)}°, максимальный ${format(metrics.slope.max)}°.`,
-                  meaning:
+                  observation: t(
+                    "Перепад высот в выборке {0} м, средний уклон {1}°, максимальный {2}°.",
+                    format(metrics.elevation.max - metrics.elevation.min),
+                    format(metrics.slope.mean),
+                    format(metrics.slope.max),
+                  ),
+                  meaning: t(
                     "Перепад и наклон могут влиять на поверхностный сток, равномерность полива и работу техники.",
-                  action:
+                  ),
+                  action: t(
                     "Сверьте низкие и наклонные участки на месте. При выборе мер против эрозии учитывайте почву, покров и следы стока.",
+                  ),
                   source: "NASA SRTMGL1 v003 · 1″",
-                  period: "Съёмка в феврале 2000 года",
-                  limits:
+                  period: t("Съёмка в феврале 2000 года"),
+                  limits: t(
                     "Уклон рассчитан по соседним ячейкам растра. Мелкие неровности, изменения после съёмки и фактическая эрозия требуют наземной проверки.",
+                  ),
                   confidence: "Умеренная",
                 },
               ]}
@@ -136,9 +159,9 @@ export function TerrainAnalytics({
         </>
       )}
       <p className="caption">
-        Статистика по центрам ячеек внутри границы. Мелкие канавы и современные
-        изменения рельефа могут отсутствовать. Долготный размер ячейки
-        уменьшается с широтой.
+        {t(
+          "Статистика по центрам ячеек внутри границы. Мелкие канавы и современные изменения рельефа могут отсутствовать. Долготный размер ячейки уменьшается с широтой.",
+        )}
       </p>
     </section>
   );

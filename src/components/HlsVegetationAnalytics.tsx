@@ -1,3 +1,4 @@
+import { t, localize } from "../lib/i18n";
 import {
   vegetationInsights,
   type VegetationSample,
@@ -78,11 +79,12 @@ export default function HlsVegetationAnalytics({
         const message =
           response?.error ??
           (error.context.status === 404
-            ? "Функция NASA HLS ещё не развёрнута."
-            : "Сервис NASA HLS недоступен.");
+            ? t("Функция NASA HLS ещё не развёрнута.")
+            : t("Сервис NASA HLS недоступен."));
         throw new Error(message);
       }
-      if (error) throw new Error("Не удалось связаться с сервисом NASA HLS.");
+      if (error)
+        throw new Error(t("Не удалось связаться с сервисом NASA HLS."));
       return data;
     },
   });
@@ -108,8 +110,10 @@ export default function HlsVegetationAnalytics({
     query.error?.message ??
     (paused && pending
       ? query.data?.queued
-        ? "NASA HLS ещё в очереди. Автоматическая проверка приостановлена."
-        : "NASA HLS ещё обрабатывает снимки. Автоматическая проверка приостановлена."
+        ? t("NASA HLS ещё в очереди. Автоматическая проверка приостановлена.")
+        : t(
+            "NASA HLS ещё обрабатывает снимки. Автоматическая проверка приостановлена.",
+          )
       : query.data?.warning);
   return (
     <div className="stack" style={{ display: "grid", gap: 16 }}>
@@ -119,7 +123,7 @@ export default function HlsVegetationAnalytics({
         !query.data?.pending &&
         (!query.isFetching || rows.length > 0) && (
           <FieldInsights
-            title="Заключение по растительности"
+            title={t("Заключение по растительности")}
             insights={vegetationInsights(rows, insightPeriod)}
           />
         )}
@@ -127,52 +131,65 @@ export default function HlsVegetationAnalytics({
         <Leaf size={18} />
         <div>
           <strong>
-            NASA HLS v2.0 · 30 м · {year}
-            {query.data?.cached ? " · из кэша" : ""}
+            {t("NASA HLS v2.0 · 30 м ·") + " "}
+            {year}
+            {query.data?.cached ? " " + t("· из кэша") : ""}
           </strong>
           <p>
-            NDVI по отражательной способности HLSL30 (B05/B04) и HLSS30
-            (B8A/B04). Облака, тени, снег, высокий аэрозоль и недействительные
-            пиксели исключены маской Fmask. Пиксели воды подсчитаны отдельно.
+            {t(
+              "NDVI по отражательной способности HLSL30 (B05/B04) и HLSS30 (B8A/B04). Облака, тени, снег, высокий аэрозоль и недействительные пиксели исключены маской Fmask. Пиксели воды подсчитаны отдельно.",
+            )}
           </p>
           <p>
-            NDVI описывает спектральный отклик поверхности. По нему нельзя
-            напрямую определить влажность почвы, урожайность или здоровье
-            растений.
+            {t(
+              "NDVI описывает спектральный отклик поверхности. По нему нельзя напрямую определить влажность почвы, урожайность или здоровье растений.",
+            )}
           </p>
         </div>
       </div>
       {demo ? (
         <p className="notice">
-          Для анализа NASA HLS выберите сохранённое поле в своём аккаунте.
+          {t(
+            "Для анализа NASA HLS выберите сохранённое поле в своём аккаунте.",
+          )}
         </p>
       ) : year < earliestHlsYear ? (
         <p className="notice">
-          Для NASA HLS Level-2A в приложении доступны годы с 2013 года. Покрытие
-          зависит от места и даты.
+          {t(
+            "Для NASA HLS Level-2A в приложении доступны годы с 2013 года. Покрытие зависит от места и даты.",
+          )}
         </p>
       ) : (
         <>
           {waiting && !warning && (
             <p role="status">
               {query.data?.state === "partial"
-                ? "Частичные результаты сохранены. Ожидается продолжение анализа"
+                ? t(
+                    "Частичные результаты сохранены. Ожидается продолжение анализа",
+                  )
                 : query.data?.queued
-                ? "Анализ ожидает запуска"
-                : "Выполняется анализ"}{" "}
-              NASA HLS за {year} год…
+                  ? t("Анализ ожидает запуска")
+                  : t("Выполняется анализ")}{" "}
+              {t("NASA HLS за") + " "}
+              {year}
+              {" " + t("год…")}
             </p>
           )}
           {warning && (
             <p role="alert" className="notice">
-              {warning}
+              {localize(warning)}
             </p>
           )}
           {!waiting && !warning && !valid.length && (
             <p className="notice">
               {rows.length
-                ? "Нет пригодных пикселей на снимках, полностью покрывающих поле."
-                : `За ${year} год не найдено снимков с пикселями внутри поля.`}
+                ? t(
+                    "Нет пригодных пикселей на снимках, полностью покрывающих поле.",
+                  )
+                : t(
+                    "За {0} год не найдено снимков с пикселями внутри поля.",
+                    year,
+                  )}
             </p>
           )}
           {!waiting && warning && !query.data?.unsupported && (
@@ -184,7 +201,7 @@ export default function HlsVegetationAnalytics({
                   void query.refetch();
                 }}
               >
-                Проверить снова
+                {t("Проверить снова")}
               </Button>
             </div>
           )}
@@ -192,16 +209,16 @@ export default function HlsVegetationAnalytics({
             <>
               <div className="metric-grid">
                 {[
-                  ["Средний NDVI", format(mean)],
+                  [t("Средний NDVI"), format(mean)],
                   [
-                    "Минимальный NDVI",
+                    t("Минимальный NDVI"),
                     format(Math.min(...valid.map((row) => row.min!))),
                   ],
                   [
-                    "Максимальный NDVI",
+                    t("Максимальный NDVI"),
                     format(Math.max(...valid.map((row) => row.max!))),
                   ],
-                  ["Снимки с данными", String(valid.length)],
+                  [t("Снимки с данными"), String(valid.length)],
                 ].map(([label, value]) => (
                   <div key={label} className="card metric">
                     <div>{label}</div>
@@ -210,17 +227,18 @@ export default function HlsVegetationAnalytics({
                 ))}
               </div>
               <section className="card">
-                <h3>Сезонная динамика NDVI</h3>
+                <h3>{t("Сезонная динамика NDVI")}</h3>
                 <p>
-                  Каждая точка — отдельный снимок UTC. Среднее за год взвешено
-                  по числу пригодных пикселей на снимках, охватывающих всё поле.
+                  {t(
+                    "Каждая точка — отдельный снимок UTC. Среднее за год взвешено по числу пригодных пикселей на снимках, охватывающих всё поле.",
+                  )}
                 </p>
                 <ResponsiveContainer width="100%" height={275}>
                   <ScatterChart>
                     <CartesianGrid vertical={false} stroke="#edf1ed" />
                     <XAxis
                       dataKey="day"
-                      name="Дата UTC"
+                      name={t("Дата UTC")}
                       type="number"
                       domain={[Date.UTC(year, 0, 1), Date.UTC(year + 1, 0, 1)]}
                       tickFormatter={(value) =>
@@ -230,7 +248,7 @@ export default function HlsVegetationAnalytics({
                     />
                     <YAxis
                       dataKey="mean"
-                      name="Средний NDVI"
+                      name={t("Средний NDVI")}
                       domain={[-1, 1]}
                       tick={{ fontSize: 10 }}
                     />
@@ -259,24 +277,24 @@ export default function HlsVegetationAnalytics({
           )}
           {!!rows.length && (
             <section className="card" style={{ overflowX: "auto" }}>
-              <h3>Даты и покрытие поля</h3>
+              <h3>{t("Даты и покрытие поля")}</h3>
               <p>
-                Покрытие — доля пригодных пикселей от числа пикселей внутри
-                границы. «—» означает, что сервис не сообщил размер этой выборки
-                или NDVI недоступен.
+                {t(
+                  "Покрытие — доля пригодных пикселей от числа пикселей внутри границы. «—» означает, что сервис не сообщил размер этой выборки или NDVI недоступен.",
+                )}
               </p>
               <table>
                 <thead>
                   <tr>
-                    <th>Дата UTC</th>
-                    <th>Источник</th>
-                    <th>Качество</th>
-                    <th>Вода, пикс.</th>
-                    <th>Среднее</th>
-                    <th>Мин.</th>
-                    <th>Макс.</th>
-                    <th>Пригодные пиксели</th>
-                    <th>Покрытие</th>
+                    <th>{t("Дата UTC")}</th>
+                    <th>{t("Источник")}</th>
+                    <th>{t("Качество")}</th>
+                    <th>{t("Вода, пикс.")}</th>
+                    <th>{t("Среднее")}</th>
+                    <th>{t("Мин.")}</th>
+                    <th>{t("Макс.")}</th>
+                    <th>{t("Пригодные пиксели")}</th>
+                    <th>{t("Покрытие")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -286,10 +304,10 @@ export default function HlsVegetationAnalytics({
                       <td title={row.conceptId}>{row.dataset}</td>
                       <td>
                         {!row.tileContainsField
-                          ? "Часть поля"
+                          ? t("Часть поля")
                           : row.validPixels === 0
-                            ? "Пиксели исключены маской"
-                            : "Прошёл маску"}
+                            ? t("Пиксели исключены маской")
+                            : t("Прошёл маску")}
                       </td>
                       <td>{row.waterPixels}</td>
                       <td>{format(row.mean)}</td>
@@ -306,8 +324,9 @@ export default function HlsVegetationAnalytics({
                 </tbody>
               </table>
               <p className="caption">
-                NASA LP DAAC · HLS v2.0. Для частичного покрытия показана
-                статистика внутри части поля, попавшей в снимок.
+                {t(
+                  "NASA LP DAAC · HLS v2.0. Для частичного покрытия показана статистика внутри части поля, попавшей в снимок.",
+                )}
               </p>
             </section>
           )}

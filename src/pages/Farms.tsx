@@ -1,3 +1,4 @@
+import { t, localize } from "../lib/i18n";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, ArrowUpRight, Tractor, Trash2, Pencil } from "lucide-react";
@@ -10,7 +11,7 @@ import SoilEstimate from "../components/SoilEstimate";
 import type { Field, Season } from "../lib/types";
 export default function Farms() {
   const { data, isLoading, error, save } = useData();
-  const { user } = useAuth();
+  const { user, demo } = useAuth();
   const { farmId, setFarm } = useUI();
   const [search, setSearch] = useState("");
   const [fieldForm, setFieldForm] = useState<Field | "new" | null>(null);
@@ -33,25 +34,26 @@ export default function Farms() {
     setMessage("");
     try {
       await action();
-      setMessage("Изменения сохранены");
+      setMessage(t("Изменения сохранены"));
     } catch (e) {
       setMessage(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
   }
-  if (isLoading) return <div className="page">Загрузка хозяйств…</div>;
-  if (error) return <div className="page error">{error.message}</div>;
+  if (isLoading) return <div className="page">{t("Загрузка хозяйств…")}</div>;
+  if (error) return <div className="page error">{localize(error.message)}</div>;
   return (
     <main className="page">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">ВАШИ ЗЕМЛИ</span>
-          <h1>Мои хозяйства</h1>
-          <p>Каждое поле — часть большой картины.</p>
+          <span className="eyebrow">{t("ВАШИ ЗЕМЛИ")}</span>
+          <h1>{t("Мои хозяйства")}</h1>
+          <p>{t("Каждое поле — часть большой картины.")}</p>
         </div>
         <Button onClick={() => setFarmForm(true)}>
-          <Plus size={16} /> Создать хозяйство
+          <Plus size={16} />
+          {" " + t("Создать хозяйство")}
         </Button>
       </div>
       <p role="status">{message}</p>
@@ -63,7 +65,7 @@ export default function Farms() {
             onClick={() => setFarm(f.id)}
           >
             <Tractor size={17} />
-            {f.name}
+            {demo ? t(f.name) : f.name}
           </button>
         ))}
       </div>
@@ -74,27 +76,30 @@ export default function Farms() {
               <span className="eyebrow">
                 {farm.country} / {farm.region}
               </span>
-              <h2>{farm.name}</h2>
+              <h2>{demo ? t(farm.name) : farm.name}</h2>
             </div>
             <div className="row">
               <Button
                 variant="outline"
                 disabled={busy}
                 onClick={() => {
-                  const name = prompt("Название хозяйства", farm.name);
+                  const name = prompt(t("Название хозяйства"), farm.name);
                   if (name?.trim())
                     void perform(() =>
                       save("farms", { ...farm, name: name.trim() }),
                     );
                 }}
               >
-                <Pencil size={15} /> Переименовать
+                <Pencil size={15} />
+                {" " + t("Переименовать")}
               </Button>
               <Button
                 variant="outline"
                 disabled={busy}
                 onClick={() => {
-                  if (confirm(`Удалить «${farm.name}», все поля и историю?`))
+                  if (
+                    confirm(t("Удалить «{0}», все поля и историю?", farm.name))
+                  )
                     void perform(() => save("farms", { id: farm.id }, true));
                 }}
               >
@@ -103,16 +108,17 @@ export default function Farms() {
             </div>
           </div>
           <div className="page-heading">
-            <h2>Поля хозяйства</h2>
+            <h2>{t("Поля хозяйства")}</h2>
             <div className="row">
               <input
-                aria-label="Поиск поля"
-                placeholder="Найти поле…"
+                aria-label={t("Поиск поля")}
+                placeholder={t("Найти поле…")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               <Button onClick={() => setFieldForm("new")}>
-                <Plus size={16} /> Добавить поле
+                <Plus size={16} />
+                {" " + t("Добавить поле")}
               </Button>
             </div>
           </div>
@@ -120,11 +126,11 @@ export default function Farms() {
             <table>
               <thead>
                 <tr>
-                  <th>Поле</th>
-                  <th>Площадь</th>
-                  <th>Почва</th>
-                  <th>Орошение</th>
-                  <th>Действия</th>
+                  <th>{t("Поле")}</th>
+                  <th>{t("Площадь")}</th>
+                  <th>{t("Почва")}</th>
+                  <th>{t("Орошение")}</th>
+                  <th>{t("Действия")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,36 +144,44 @@ export default function Farms() {
                     <tr key={f.id}>
                       <td>
                         <Link to={"/analytics/" + f.id}>
-                          {f.name} <ArrowUpRight size={12} />
+                          {demo ? t(f.name) : f.name} <ArrowUpRight size={12} />
                         </Link>
                       </td>
-                      <td>{Number(f.area_hectares).toFixed(1)} га</td>
+                      <td>
+                        {Number(f.area_hectares).toFixed(1)}
+                        {" " + t("га")}
+                      </td>
                       <td>
                         {f.soil_type && (
-                          <p>Уточнение фермера · {f.soil_type}</p>
+                          <p>
+                            {t("Уточнение фермера ·") + " "}
+                            {localize(f.soil_type)}
+                          </p>
                         )}
                         <SoilEstimate boundary={f.boundary} />
                       </td>
-                      <td>{f.irrigation_type || "Не указано"}</td>
+                      <td>{localize(f.irrigation_type) || t("Не указано")}</td>
                       <td>
                         <div className="row">
                           <Link
                             to={`/farms?history=${encodeURIComponent(f.id)}`}
                           >
-                            История посевов
+                            {t("История посевов")}
                           </Link>
                           <button
-                            aria-label={"Редактировать " + f.name}
+                            aria-label={t("Редактировать") + " " + f.name}
                             onClick={() => setFieldForm(f)}
                           >
                             <Pencil size={15} />
                           </button>
                           <button
-                            aria-label={"Удалить " + f.name}
+                            aria-label={t("Удалить") + " " + f.name}
                             disabled={busy}
                             onClick={() => {
                               if (
-                                confirm(`Удалить поле «${f.name}» и историю?`)
+                                confirm(
+                                  t("Удалить поле «{0}» и историю?", f.name),
+                                )
                               )
                                 void perform(() =>
                                   save("fields", { id: f.id }, true),
@@ -185,10 +199,10 @@ export default function Farms() {
             {!data?.fields.some((f) => f.farm_id === farm.id) && (
               <div className="empty">
                 <Tractor />
-                <h2>Добавьте первое поле</h2>
-                <p>Нарисуйте границу на карте или укажите координаты.</p>
+                <h2>{t("Добавьте первое поле")}</h2>
+                <p>{t("Нарисуйте границу на карте или укажите координаты.")}</p>
                 <Link className="button primary" to="/map">
-                  Открыть карту →
+                  {t("Открыть карту →")}
                 </Link>
               </div>
             )}
@@ -197,9 +211,11 @@ export default function Farms() {
       ) : (
         <div className="empty card">
           <Tractor />
-          <h2>Начните с вашего хозяйства</h2>
-          <p>Добавьте название и регион, затем создайте первое поле.</p>
-          <Button onClick={() => setFarmForm(true)}>Создать хозяйство</Button>
+          <h2>{t("Начните с вашего хозяйства")}</h2>
+          <p>{t("Добавьте название и регион, затем создайте первое поле.")}</p>
+          <Button onClick={() => setFarmForm(true)}>
+            {t("Создать хозяйство")}
+          </Button>
         </div>
       )}
       {fieldForm && farm && (
@@ -219,10 +235,10 @@ export default function Farms() {
           <section
             role="dialog"
             aria-modal="true"
-            aria-label="Создать хозяйство"
+            aria-label={t("Создать хозяйство")}
             className="card modal"
           >
-            <h2>Новое хозяйство</h2>
+            <h2>{t("Новое хозяйство")}</h2>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -239,9 +255,9 @@ export default function Farms() {
               }}
             >
               {[
-                ["name", "Название"],
-                ["country", "Страна"],
-                ["region", "Регион"],
+                ["name", t("Название")],
+                ["country", t("Страна")],
+                ["region", t("Регион")],
               ].map(([name, label]) => (
                 <label key={name}>
                   {label}
@@ -250,13 +266,13 @@ export default function Farms() {
               ))}
               <p role="status">{message}</p>
               <div className="row">
-                <Button disabled={busy}>Создать</Button>
+                <Button disabled={busy}>{t("Создать")}</Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setFarmForm(false)}
                 >
-                  Отмена
+                  {t("Отмена")}
                 </Button>
               </div>
             </form>
@@ -269,9 +285,12 @@ export default function Farms() {
             className="card modal wide"
             role="dialog"
             aria-modal="true"
-            aria-label="История поля"
+            aria-label={t("История поля")}
           >
-            <h2>{history.name} · история сезонов</h2>
+            <h2>
+              {demo ? t(history.name) : history.name}
+              {" " + t("· история сезонов")}
+            </h2>
             {data?.seasons
               .filter((s) => s.field_id === history.id)
               .sort((a, b) => b.year - a.year)
@@ -279,37 +298,41 @@ export default function Farms() {
                 <div className="history-row" key={s.id}>
                   <strong>{s.year}</strong>
                   <button
-                    aria-label={"Редактировать сезон " + s.year}
+                    aria-label={t("Редактировать сезон") + " " + s.year}
                     onClick={() => setSeasonEdit(s)}
                   >
                     <Pencil size={14} />
                   </button>
                   <span>
-                    {data.crops.find((c) => c.id === s.crop_id)?.name}
+                    {t(data.crops.find((c) => c.id === s.crop_id)?.name ?? "")}
                   </span>
                   <span>
-                    {s.yield_tons_per_hectare ?? "—"} т/га ·{" "}
-                    {s.irrigation_amount_mm ?? "—"} мм
+                    {s.yield_tons_per_hectare ?? "—"}
+                    {" " + t("т/га ·")} {s.irrigation_amount_mm ?? "—"}
+                    {" " + t("мм")}
                   </span>
                   <button
                     disabled={busy}
                     onClick={() => {
-                      if (confirm("Удалить сезон?"))
+                      if (confirm(t("Удалить сезон?")))
                         void perform(() =>
                           save("field_seasons", { id: s.id }, true),
                         );
                     }}
-                    aria-label="Удалить сезон"
+                    aria-label={t("Удалить сезон")}
                   >
                     <Trash2 size={14} />
                   </button>
                   <p>{s.notes}</p>
                 </div>
               ))}
-            <h3>{seasonEdit ? "Редактировать сезон" : "Записать сезон"}</h3>
+            <h3>
+              {seasonEdit ? t("Редактировать сезон") : t("Записать сезон")}
+            </h3>
             <p>
-              Укажите год и культуру, которую выращивали. Даты, урожайность,
-              полив и заметки можно добавить позже.
+              {t(
+                "Укажите год и культуру, которую выращивали. Даты, урожайность, полив и заметки можно добавить позже.",
+              )}
             </p>
             <form
               key={seasonEdit?.id ?? "new"}
@@ -338,7 +361,7 @@ export default function Farms() {
             >
               <div className="form-grid">
                 <label>
-                  Год
+                  {t("Год")}
                   <input
                     type="number"
                     name="year"
@@ -349,24 +372,24 @@ export default function Farms() {
                   />
                 </label>
                 <label>
-                  Культура
+                  {t("Культура")}
                   <select
                     name="crop_id"
                     defaultValue={seasonEdit?.crop_id ?? ""}
                     required
                   >
                     <option value="" disabled>
-                      Выберите культуру
+                      {t("Выберите культуру")}
                     </option>
                     {data?.crops.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name}
+                        {t(c.name)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label>
-                  Урожайность, т/га
+                  {t("Урожайность, т/га")}
                   <input
                     type="number"
                     name="yield"
@@ -376,7 +399,7 @@ export default function Farms() {
                   />
                 </label>
                 <label>
-                  Орошение, мм
+                  {t("Орошение, мм")}
                   <input
                     type="number"
                     name="water"
@@ -386,7 +409,7 @@ export default function Farms() {
                   />
                 </label>
                 <label>
-                  Посев
+                  {t("Посев")}
                   <input
                     type="date"
                     name="planting_date"
@@ -394,7 +417,7 @@ export default function Farms() {
                   />
                 </label>
                 <label>
-                  Уборка
+                  {t("Уборка")}
                   <input
                     type="date"
                     name="harvest_date"
@@ -403,12 +426,12 @@ export default function Farms() {
                 </label>
               </div>
               <label>
-                Заметки
+                {t("Заметки")}
                 <textarea name="notes" defaultValue={seasonEdit?.notes ?? ""} />
               </label>
               <p role="status">{message}</p>
               <div className="row">
-                <Button disabled={busy}>Сохранить сезон</Button>
+                <Button disabled={busy}>{t("Сохранить сезон")}</Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -417,10 +440,10 @@ export default function Farms() {
                     setParams({}, { replace: true });
                   }}
                 >
-                  Закрыть
+                  {t("Закрыть")}
                 </Button>
                 <Link to={`/rotation/${encodeURIComponent(history.id)}`}>
-                  Перейти к планированию →
+                  {t("Перейти к планированию →")}
                 </Link>
               </div>
             </form>

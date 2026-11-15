@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { useEffect, useRef } from "react";
 import {
@@ -57,7 +58,7 @@ export default function VegetationOverlay({
       ref={container}
       style={{ height: 320 }}
       role="region"
-      aria-label="Карта NDVI"
+      aria-label={t("Карта NDVI")}
     />
   );
 }

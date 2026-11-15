@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
+import { setLanguage } from "../src/lib/i18n";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import SoilEstimate, { cachedSoil } from "../src/components/SoilEstimate";
 import type { Field } from "../src/lib/types";
+
+setLanguage("ru");
 
 it("does not apply a late soil response to a changed boundary, and allows retry after failure", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

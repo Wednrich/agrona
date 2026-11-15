@@ -1,3 +1,4 @@
+import { getLanguage, t } from "../lib/i18n";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "./ui/button";
@@ -16,15 +17,15 @@ function Answer({ answer }: { answer: AdvisorAnswer }) {
     <div className="advisor-answer">
       <p className="caption">
         {answer.method === "deepseek"
-          ? "Объяснение с помощью DeepSeek"
-          : "Сводка по источникам AGRONA"}
+          ? t("Объяснение с помощью DeepSeek")
+          : t("Сводка по источникам AGRONA")}
       </p>
       <p>
         <strong>{answer.summary}</strong>
       </p>
       {answer.observations.length > 0 && (
         <section>
-          <h4>Что показывают данные</h4>
+          <h4>{t("Что показывают данные")}</h4>
           <ul>
             {answer.observations.map((item) => (
               <li key={item.text}>
@@ -45,9 +46,9 @@ function Answer({ answer }: { answer: AdvisorAnswer }) {
         </section>
       )}
       {[
-        { title: "Как это понимать", lines: answer.interpretations },
-        { title: "Что можно проверить", lines: answer.recommendations },
-        { title: "Ограничения данных", lines: answer.limitations },
+        { title: t("Как это понимать"), lines: answer.interpretations },
+        { title: t("Что можно проверить"), lines: answer.recommendations },
+        { title: t("Ограничения данных"), lines: answer.limitations },
       ].map(
         ({ title, lines }) =>
           lines.length > 0 && (
@@ -83,7 +84,7 @@ function useAdvisorRequest() {
       setError(
         cause instanceof Error
           ? cause.message
-          : "Не удалось получить объяснение.",
+          : t("Не удалось получить объяснение."),
       );
     } finally {
       busy.current = false;
@@ -112,7 +113,7 @@ export function ExplainAdvisor({
           void run(
             {
               ...scope,
-              language: "ru",
+              language: getLanguage(),
               mode: scenarioId ? "rotation" : "analysis",
               scenarioId,
             },
@@ -122,10 +123,12 @@ export function ExplainAdvisor({
       >
         <MessageSquare size={16} aria-hidden="true" />
         {scenarioId
-          ? "Почему AGRONA рекомендует этот план?"
-          : "Объяснить мои данные"}
+          ? t("Почему AGRONA рекомендует этот план?")
+          : t("Объяснить мои данные")}
       </Button>
-      {pending && <p role="status">Подбираем объяснение по данным поля…</p>}
+      {pending && (
+        <p role="status">{t("Подбираем объяснение по данным поля…")}</p>
+      )}
       {error && (
         <p role="alert" className="error">
           {error}
@@ -168,7 +171,8 @@ export function AiAdvisorChat({
   scope: Scope;
   demo: boolean;
 }) {
-  const [language, setLanguage] = useState<AdvisorLanguage>("ru");
+  const [answerLanguage, setAnswerLanguage] = useState<AdvisorLanguage>();
+  const language = answerLanguage ?? getLanguage();
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const { run, pending, error } = useAdvisorRequest();
@@ -189,27 +193,30 @@ export function AiAdvisorChat({
   }
   return (
     <section className="card advisor-chat">
-      <h2>ИИ-агроном</h2>
+      <h2>{t("ИИ-агроном")}</h2>
       <p>
-        Задайте вопрос о своём поле. AGRONA использует спутниковые и
-        климатические данные, чтобы объяснить состояние поля и помочь оценить
-        возможные решения.
+        {t(
+          "Задайте вопрос о своём поле. AGRONA использует спутниковые и климатические данные, чтобы объяснить состояние поля и помочь оценить возможные решения.",
+        )}
       </p>
       <p className="caption">
-        Период наблюдений {scope.start} — {scope.end}
+        {t("Период наблюдений") + " "}
+        {scope.start} — {scope.end}
       </p>
       {demo ? (
-        <p>Войдите в аккаунт и выберите своё поле, чтобы задать вопрос.</p>
+        <p>
+          {t("Войдите в аккаунт и выберите своё поле, чтобы задать вопрос.")}
+        </p>
       ) : (
         <>
           <form className="advisor-form" onSubmit={submit}>
             <label className="advisor-language">
-              Язык ответа
+              {t("Язык ответа")}
               <select
                 value={language}
                 disabled={pending}
                 onChange={(event) =>
-                  setLanguage(event.target.value as AdvisorLanguage)
+                  setAnswerLanguage(event.target.value as AdvisorLanguage)
                 }
               >
                 <option value="ru">Русский</option>
@@ -217,7 +224,10 @@ export function AiAdvisorChat({
                 <option value="en">English</option>
               </select>
             </label>
-            <div className="advisor-examples" aria-label="Примеры вопросов">
+            <div
+              className="advisor-examples"
+              aria-label={t("Примеры вопросов")}
+            >
               {examples[language].map((example) => (
                 <Button
                   key={example}
@@ -233,7 +243,7 @@ export function AiAdvisorChat({
                 </Button>
               ))}
             </div>
-            <label htmlFor={inputId}>Вопрос о поле</label>
+            <label htmlFor={inputId}>{t("Вопрос о поле")}</label>
             <textarea
               id={inputId}
               ref={inputRef}
@@ -247,16 +257,19 @@ export function AiAdvisorChat({
               type="submit"
               disabled={pending || question.trim().length < 2}
             >
-              <Send size={16} aria-hidden="true" /> Отправить вопрос
+              <Send size={16} aria-hidden="true" />
+              {" " + t("Отправить вопрос")}
             </Button>
           </form>
-          {pending && <p role="status">Подбираем объяснение по данным поля…</p>}
+          {pending && (
+            <p role="status">{t("Подбираем объяснение по данным поля…")}</p>
+          )}
           {error && (
             <p role="alert" className="error">
               {error}
             </p>
           )}
-          <div role="log" aria-label="История беседы">
+          <div role="log" aria-label={t("История беседы")}>
             {turns.map((turn, i) => (
               <article key={i} className="advisor-turn">
                 <h3>{turn.question}</h3>

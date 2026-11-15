@@ -1,3 +1,4 @@
+import { getLanguage, t } from "../lib/i18n";
 import { useEffect, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Command } from "cmdk";
@@ -28,9 +29,14 @@ export function CountryPicker({
   error?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const language = getLanguage();
+  const display = new Intl.DisplayNames(language, { type: "region" });
+  const localizedCountries = countries
+    .map(({ code }) => ({ code, name: display.of(code) ?? code }))
+    .sort((a, b) => a.name.localeCompare(b.name, language));
   return (
     <div className="registration-field">
-      <span id="country-label">Страна</span>
+      <span id="country-label">{t("Страна")}</span>
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger
           type="button"
@@ -39,7 +45,11 @@ export function CountryPicker({
           aria-invalid={!!error}
           aria-describedby={error ? "country-error" : undefined}
         >
-          <span id="country-value">{value?.name ?? "Выберите страну"}</span>
+          <span id="country-value">
+            {value
+              ? (display.of(value.code) ?? value.code)
+              : t("Выберите страну")}
+          </span>
           <ChevronsUpDown size={16} />
         </Popover.Trigger>
         <Popover.Portal>
@@ -48,14 +58,14 @@ export function CountryPicker({
             align="start"
             sideOffset={6}
           >
-            <Command label="Выбор страны">
+            <Command label={t("Выбор страны")}>
               <Command.Input
-                placeholder="Поиск страны…"
-                aria-label="Поиск страны"
+                placeholder={t("Поиск страны…")}
+                aria-label={t("Поиск страны")}
               />
               <Command.List>
-                <Command.Empty>Страна не найдена.</Command.Empty>
-                {countries.map((c) => (
+                <Command.Empty>{t("Страна не найдена.")}</Command.Empty>
+                {localizedCountries.map((c) => (
                   <Command.Item
                     key={c.code}
                     value={c.name}
@@ -107,11 +117,11 @@ export function LocationPicker({
     const timer = window.setTimeout(async () => {
       try {
         const key = import.meta.env.VITE_MAPTILER_KEY;
-        if (!key) throw new Error("Поиск мест не настроен.");
+        if (!key) throw new Error(t("Поиск мест не настроен."));
         const params = new URLSearchParams({
           key,
           country: country.code.toLowerCase(),
-          language: "ru",
+          language: getLanguage(),
           autocomplete: "true",
           types: "region,subregion,county,municipality,locality",
           limit: "10",
@@ -121,7 +131,7 @@ export function LocationPicker({
           { signal: controller.signal },
         );
         if (!response.ok)
-          throw new Error("Поиск мест недоступен. Попробуйте ещё раз.");
+          throw new Error(t("Поиск мест недоступен. Попробуйте ещё раз."));
         const body = await response.json();
         const items: Suggestion[] = [];
         for (const feature of body.features ?? []) {
@@ -144,8 +154,8 @@ export function LocationPicker({
             kind: ["region", "subregion", "county"].includes(
               feature.place_type?.[0],
             )
-              ? "Регион"
-              : "Населённый пункт",
+              ? t("Регион")
+              : t("Населённый пункт"),
           });
         }
         if (!controller.signal.aborted) setResult({ query: search, items });
@@ -157,7 +167,7 @@ export function LocationPicker({
             error:
               err instanceof Error
                 ? err.message
-                : "Не удалось выполнить поиск.",
+                : t("Не удалось выполнить поиск."),
           });
       }
     }, 300);
@@ -175,13 +185,15 @@ export function LocationPicker({
         if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
       }}
     >
-      <label htmlFor="registration-location">Регион / город</label>
-      <Command shouldFilter={false} label="Поиск региона или города">
+      <label htmlFor="registration-location">{t("Регион / город")}</label>
+      <Command shouldFilter={false} label={t("Поиск региона или города")}>
         <Command.Input
           id="registration-location"
           disabled={!country}
           placeholder={
-            country ? "Начните вводить название" : "Сначала выберите страну"
+            country
+              ? t("Начните вводить название")
+              : t("Сначала выберите страну")
           }
           value={value?.name ?? query}
           onFocus={() => setFocused(true)}
@@ -200,7 +212,7 @@ export function LocationPicker({
         {show && (
           <Command.List className="registration-options location-options">
             {!current ? (
-              <div role="status">Поиск мест…</div>
+              <div role="status">{t("Поиск мест…")}</div>
             ) : current.error ? (
               <div role="alert">
                 {current.error}{" "}
@@ -212,11 +224,11 @@ export function LocationPicker({
                     requestAnimationFrame(() => setFocused(true));
                   }}
                 >
-                  Повторить
+                  {t("Повторить")}
                 </button>
               </div>
             ) : current.items.length === 0 ? (
-              <div role="status">Ничего не найдено.</div>
+              <div role="status">{t("Ничего не найдено.")}</div>
             ) : (
               current.items.map((item) => (
                 <Command.Item

@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type {
@@ -32,7 +33,7 @@ const messages: Record<AdvisorErrorCode, string> = {
 export async function requestAdvisor(
   input: AdvisorInput,
 ): Promise<AdvisorAnswer> {
-  if (!supabase) throw new Error(messages.disabled);
+  if (!supabase) throw new Error(t(messages.disabled));
   const { data, error } = await supabase.functions.invoke<{
     answer: AdvisorAnswer;
   }>("ai-advisor", { body: input });
@@ -42,13 +43,13 @@ export async function requestAdvisor(
       const payload = await response.json().catch(() => null);
       const code = payload?.error;
       if (typeof code === "string" && Object.hasOwn(messages, code)) {
-        throw new Error(messages[code as AdvisorErrorCode]);
+        throw new Error(t(messages[code as AdvisorErrorCode]));
       }
-      if (response.status === 401) throw new Error(messages.sign_in);
-      if (response.status === 404) throw new Error(messages.disabled);
+      if (response.status === 401) throw new Error(t(messages.sign_in));
+      if (response.status === 404) throw new Error(t(messages.disabled));
     }
-    throw new Error(messages.server);
+    throw new Error(t(messages.server));
   }
-  if (!data?.answer?.summary) throw new Error(messages.response);
+  if (!data?.answer?.summary) throw new Error(t(messages.response));
   return data.answer;
 }

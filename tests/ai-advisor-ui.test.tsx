@@ -51,7 +51,7 @@ it("sends the selected period only after the explicit analytics action", async (
   await act(async () => host.querySelector("button")!.click());
   expect(requestAdvisor).toHaveBeenCalledWith({
     ...scope,
-    language: "ru",
+    language: "en",
     mode: "analysis",
   });
   expect(host.textContent).toContain("NDVI пока недоступен.");
@@ -73,7 +73,7 @@ it("shows conversation history and uses the preceding supported topic on follow-
   expect(requestAdvisor).toHaveBeenCalledWith({
     ...scope,
     mode: "chat",
-    language: "ru",
+    language: "en",
     question: example.textContent,
     focus: undefined,
   });

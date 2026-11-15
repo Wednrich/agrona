@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { setLanguage } from "../src/lib/i18n";
 import { act } from "react";
 import power from "../public/demo-power-2025.json";
 import { createRoot, type Root } from "react-dom/client";
@@ -10,6 +11,8 @@ import type { FarmData } from "../src/lib/types";
 import Rotation from "../src/pages/Rotation";
 import { rotationClimateKey } from "../src/lib/field-write";
 import * as engine from "../src/features/rotation";
+
+setLanguage("ru");
 
 const adapters = vi.hoisted(() => ({
   data: {} as FarmData,

@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { emptyCoordinate, type CoordinateRow } from "../lib/field-boundary";
 import { Button } from "./ui/button";
@@ -18,15 +19,17 @@ export default function CoordinateTable({
   return (
     <>
       <p>
-        Введите точки по порядку обхода границы. Контур замкнётся автоматически.
+        {t(
+          "Введите точки по порядку обхода границы. Контур замкнётся автоматически.",
+        )}
       </p>
       <table className="field-coordinate-table">
         <thead>
           <tr>
             <th scope="col">№</th>
-            <th scope="col">Широта</th>
-            <th scope="col">Долгота</th>
-            <th scope="col">Действия</th>
+            <th scope="col">{t("Широта")}</th>
+            <th scope="col">{t("Долгота")}</th>
+            <th scope="col">{t("Действия")}</th>
           </tr>
         </thead>
         <tbody>
@@ -37,7 +40,11 @@ export default function CoordinateTable({
                 <td key={axis}>
                   <input
                     inputMode="decimal"
-                    aria-label={`Точка ${index + 1}, ${axis === "latitude" ? "широта" : "долгота"}`}
+                    aria-label={t(
+                      "Точка {0}, {1}",
+                      index + 1,
+                      axis === "latitude" ? t("широта") : t("долгота"),
+                    )}
                     placeholder={axis === "latitude" ? "43.2389" : "76.8897"}
                     value={row[axis]}
                     onChange={(event) =>
@@ -57,7 +64,7 @@ export default function CoordinateTable({
                   <Button
                     type="button"
                     variant="ghost"
-                    aria-label={`Переместить точку ${index + 1} вверх`}
+                    aria-label={t("Переместить точку {0} вверх", index + 1)}
                     disabled={index === 0}
                     onClick={() => move(index, -1)}
                   >
@@ -66,7 +73,7 @@ export default function CoordinateTable({
                   <Button
                     type="button"
                     variant="ghost"
-                    aria-label={`Переместить точку ${index + 1} вниз`}
+                    aria-label={t("Переместить точку {0} вниз", index + 1)}
                     disabled={index === rows.length - 1}
                     onClick={() => move(index, 1)}
                   >
@@ -75,7 +82,7 @@ export default function CoordinateTable({
                   <Button
                     type="button"
                     variant="ghost"
-                    aria-label={`Удалить точку ${index + 1}`}
+                    aria-label={t("Удалить точку {0}", index + 1)}
                     onClick={() => onChange(rows.filter((_, i) => i !== index))}
                   >
                     <Trash2 size={16} />
@@ -92,7 +99,8 @@ export default function CoordinateTable({
         disabled={rows.length >= 9999}
         onClick={() => onChange([...rows, emptyCoordinate()])}
       >
-        <Plus size={16} /> Добавить точку
+        <Plus size={16} />
+        {" " + t("Добавить точку")}
       </Button>
     </>
   );

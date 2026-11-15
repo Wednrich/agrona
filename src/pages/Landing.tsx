@@ -1,4 +1,6 @@
+import { t } from "../lib/i18n";
 import { Brand } from "../components/Brand";
+import { LanguageSelect } from "../components/LanguageSelect";
 import { workspaceAccess } from "../lib/workspace-access";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -25,52 +27,56 @@ export default function Landing() {
       <nav className="landing-nav">
         <Brand />
         <div>
-          <a href="#approach">Возможности</a>
-          <a href="#data">Данные NASA</a>
+          <LanguageSelect />
+          <a href="#approach">{t("Возможности")}</a>
+          <a href="#data">{t("Данные NASA")}</a>
           <Link to={destination}>
-            {user ? "Открыть приложение" : "Войти"} ↗
+            {user ? t("Открыть приложение") : t("Войти")} ↗
           </Link>
         </div>
       </nav>
       <section className="hero">
         <div className="hero-copy">
           <div className="hero-tag">
-            <span /> ДАННЫЕ ИЗ КОСМОСА. РЕШЕНИЯ НА ЗЕМЛЕ.
+            <span />
+            {" " + t("ДАННЫЕ ИЗ КОСМОСА. РЕШЕНИЯ НА ЗЕМЛЕ.")}
           </div>
           <h1>
-            Спутниковая аналитика
+            {t("Спутниковая аналитика")}
             <br />
-            для{" "}
+            {t("для")}{" "}
             <em>
-              умного
+              {t("умного")}
               <br />
-              севооборота.
+              {t("севооборота.")}
             </em>
           </h1>
           <p>
-            Планируйте культуры, оценивайте климатические риски и принимайте
-            решения на основе данных NASA.
+            {t(
+              "Планируйте культуры, оценивайте климатические риски и принимайте решения на основе данных NASA.",
+            )}
           </p>
           <div className="row">
             <Link className="button primary" to={destination}>
-              {user ? "Открыть приложение" : "Начать работу"}{" "}
+              {user ? t("Открыть приложение") : t("Начать работу")}{" "}
               <ArrowUpRight size={17} />
             </Link>
             <Button variant="ghost" onClick={demo} disabled={loading}>
-              {user ? "К карте" : "Попробовать демо"} <ArrowRight size={16} />
+              {user ? t("К карте") : t("Попробовать демо")}{" "}
+              <ArrowRight size={16} />
             </Button>
           </div>
           <div className="hero-foot">
             <Satellite size={18} />
             <span>NASA POWER</span>
             <i />
-            <span>От истории погоды — к будущему поля</span>
+            <span>{t("От истории погоды — к будущему поля")}</span>
           </div>
         </div>
         <div className="hero-visual">
           <img
             src="https://images.unsplash.com/photo-1779943539046-a0e1a07373ac?auto=format&fit=crop&w=1400&q=85"
-            alt="Зелёные сельскохозяйственные поля на холмах"
+            alt={t("Зелёные сельскохозяйственные поля на холмах")}
           />
           <div className="image-shade" />
           <div className="visual-top">
@@ -78,33 +84,33 @@ export default function Landing() {
             <span>↗</span>
           </div>
           <div className="visual-caption">
-            <span>УВИДЕТЬ БОЛЬШЕ. ВЫРАСТИТЬ ЛУЧШЕ.</span>
+            <span>{t("УВИДЕТЬ БОЛЬШЕ. ВЫРАСТИТЬ ЛУЧШЕ.")}</span>
             <h2>
-              У каждого поля
+              {t("У каждого поля")}
               <br />
-              есть своя история.
+              {t("есть своя история.")}
             </h2>
-            <p>Давайте спланируем следующую главу.</p>
+            <p>{t("Давайте спланируем следующую главу.")}</p>
           </div>
           <div className="visual-coordinate">
             51.197° N &nbsp; 69.369° E{" "}
-            <span>ДЕМО-ЛОКАЦИЯ · ФОТО ИЛЛЮСТРАТИВНОЕ</span>
+            <span>{t("ДЕМО-ЛОКАЦИЯ · ФОТО ИЛЛЮСТРАТИВНОЕ")}</span>
           </div>
         </div>
       </section>
       <section className="mission" id="approach">
         <div>
-          <span className="eyebrow">ОДНО ПОЛЕ. ПОЛНАЯ КАРТИНА.</span>
+          <span className="eyebrow">{t("ОДНО ПОЛЕ. ПОЛНАЯ КАРТИНА.")}</span>
           <h2>
-            От границ участка
+            {t("От границ участка")}
             <br />
-            до стратегии на годы.
+            {t("до стратегии на годы.")}
           </h2>
         </div>
         <p>
-          Объедините историю своего хозяйства с наблюдениями за Землёй.
-          Понимайте условия, сравнивайте варианты и сохраняйте решения в одном
-          рабочем пространстве.
+          {t(
+            "Объедините историю своего хозяйства с наблюдениями за Землёй. Понимайте условия, сравнивайте варианты и сохраняйте решения в одном рабочем пространстве.",
+          )}
         </p>
       </section>
       <section className="feature-strip">
@@ -112,20 +118,26 @@ export default function Landing() {
           [
             Map,
             "01",
-            "Ваши поля на карте",
-            "Нарисуйте границы, сохраните площадь и историю культур. Все участки — в одном месте.",
+            t("Ваши поля на карте"),
+            t(
+              "Нарисуйте границы, сохраните площадь и историю культур. Все участки — в одном месте.",
+            ),
           ],
           [
             ChartNoAxesCombined,
             "02",
-            "Климат без догадок",
-            "Изучайте температуру, осадки и сухие периоды. Всегда знайте источник и границы применимости данных.",
+            t("Климат без догадок"),
+            t(
+              "Изучайте температуру, осадки и сухие периоды. Всегда знайте источник и границы применимости данных.",
+            ),
           ],
           [
             RefreshCw,
             "03",
-            "Осознанный севооборот",
-            "Сравнивайте последовательности культур по понятным правилам с учётом ваших ограничений.",
+            t("Осознанный севооборот"),
+            t(
+              "Сравнивайте последовательности культур по понятным правилам с учётом ваших ограничений.",
+            ),
           ],
         ].map(([Icon, num, title, desc]) => {
           const I = Icon as typeof Map;
@@ -151,36 +163,39 @@ export default function Landing() {
           </span>
         </div>
         <div>
-          <span className="eyebrow">НАУЧНЫЕ ДАННЫЕ. ПОНЯТНЫЙ КОНТЕКСТ.</span>
+          <span className="eyebrow">
+            {t("НАУЧНЫЕ ДАННЫЕ. ПОНЯТНЫЙ КОНТЕКСТ.")}
+          </span>
           <h2>
-            Космос ближе,
+            {t("Космос ближе,")}
             <br />
-            чем кажется.
+            {t("чем кажется.")}
           </h2>
           <p>
-            NASA POWER предоставляет многолетние наблюдения за климатом. AGRONA
-            помогает исследовать их для выбранного участка — с источниками,
-            периодами и объяснениями.
+            {t(
+              "NASA POWER предоставляет многолетние наблюдения за климатом. AGRONA помогает исследовать их для выбранного участка — с источниками, периодами и объяснениями.",
+            )}
           </p>
           <p className="caption">
-            Климатическая сетка не заменяет измерения почвы на поле. Проект для
-            NASA Space Apps; не является продуктом NASA.
+            {t(
+              "Климатическая сетка не заменяет измерения почвы на поле. Проект для NASA Space Apps; не является продуктом NASA.",
+            )}
           </p>
           <a
             href="https://power.larc.nasa.gov/"
             target="_blank"
             rel="noreferrer"
           >
-            Об источнике данных ↗
+            {t("Об источнике данных ↗")}
           </a>
         </div>
       </section>
       <section className="landing-cta">
-        <span className="eyebrow">СЛЕДУЮЩИЙ ШАГ — ВАШ</span>
-        <h2>Начните с одного поля.</h2>
-        <p>Исследуйте демохозяйство без регистрации.</p>
+        <span className="eyebrow">{t("СЛЕДУЮЩИЙ ШАГ — ВАШ")}</span>
+        <h2>{t("Начните с одного поля.")}</h2>
+        <p>{t("Исследуйте демохозяйство без регистрации.")}</p>
         <Button onClick={demo} disabled={loading}>
-          {user ? "К карте" : "Открыть демо"} <ArrowUpRight size={18} />
+          {user ? t("К карте") : t("Открыть демо")} <ArrowUpRight size={18} />
         </Button>
       </section>
       <footer>
@@ -191,7 +206,7 @@ export default function Landing() {
           target="_blank"
           rel="noreferrer"
         >
-          Фото: Unsplash
+          {t("Фото: Unsplash")}
         </a>
       </footer>
     </main>

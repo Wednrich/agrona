@@ -1,3 +1,4 @@
+import { setLanguage } from "../src/lib/i18n";
 import { describe, expect, it } from "vitest";
 import {
   climateInsights,
@@ -7,6 +8,8 @@ import {
 } from "../src/features/field-insights";
 import { initialDemo } from "../src/lib/demo";
 import type { Observation } from "../src/lib/types";
+
+setLanguage("ru");
 
 const period = { year: 2025, start: "2025-05-01", end: "2025-05-20" };
 const row = (day: number, values: Partial<Observation> = {}): Observation => ({

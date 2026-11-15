@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
@@ -50,7 +51,9 @@ export default function FieldBoundaryMap({
       });
     } catch {
       setError(
-        "Карта недоступна в этом браузере. Можно ввести координаты или импортировать GeoJSON.",
+        t(
+          "Карта недоступна в этом браузере. Можно ввести координаты или импортировать GeoJSON.",
+        ),
       );
       return;
     }
@@ -58,7 +61,7 @@ export default function FieldBoundaryMap({
       new maplibregl.NavigationControl({ showCompass: false }),
     );
     instance.on("error", () =>
-      setError("Не удалось загрузить часть карты. Проверьте подключение."),
+      setError(t("Не удалось загрузить часть карты. Проверьте подключение.")),
     );
     instance.on("load", () => {
       instance.addSource("boundary-preview", {
@@ -130,8 +133,8 @@ export default function FieldBoundaryMap({
         className="field-boundary-map"
         aria-label={
           drawing
-            ? "Карта для рисования границы"
-            : "Предпросмотр границы на карте"
+            ? t("Карта для рисования границы")
+            : t("Предпросмотр границы на карте")
         }
       />
       {error && (

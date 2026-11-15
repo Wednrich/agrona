@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import type { Observation } from "../lib/types";
 export function average(values: (number | null)[]) {
   const v = values.filter((n): n is number => n !== null && Number.isFinite(n));
@@ -60,18 +61,18 @@ export function monthly(observations: Observation[]) {
     const summary = climateSummary(rows);
     return {
       month: [
-        "Янв",
-        "Фев",
-        "Мар",
-        "Апр",
-        "Май",
-        "Июн",
-        "Июл",
-        "Авг",
-        "Сен",
-        "Окт",
-        "Ноя",
-        "Дек",
+        t("Янв"),
+        t("Фев"),
+        t("Мар"),
+        t("Апр"),
+        t("Май"),
+        t("Июн"),
+        t("Июл"),
+        t("Авг"),
+        t("Сен"),
+        t("Окт"),
+        t("Ноя"),
+        t("Дек"),
       ][m],
       temperature: summary.mean,
       rain: summary.rain,

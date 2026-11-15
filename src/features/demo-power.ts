@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 import { centroid } from "@turf/turf";
 import { initialDemo } from "../lib/demo";
 import type { Field, Observation } from "../lib/types";
@@ -19,7 +20,7 @@ export async function loadDemoPower(
   if (usesStoredDemoPower(field, year)) {
     const response = await fetch("/demo-power-2025.json");
     if (!response.ok)
-      throw new Error("Сохранённые наблюдения NASA POWER недоступны.");
+      throw new Error(t("Сохранённые наблюдения NASA POWER недоступны."));
     return response.json();
   }
   const [longitude, latitude] = centroid(field.boundary).geometry.coordinates;
