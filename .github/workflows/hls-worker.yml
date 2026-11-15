@@ -146,11 +146,21 @@ jobs:
             echo "::warning title=Active HLS lease detected::Другое задание уже арендовано (<15 мин). Аренда в PostgreSQL не даст перезаписать результаты, но этот запуск может остаться без работы."
           fi
 
+          # Idle scheduled runs stop here: no image build and no container start.
+          has_work=1
+          if [ -z "$HLS_FIELD" ] && [ "$(jq '[.[] | select(.status == "running")] | length' "$jobs")" = "0" ]; then
+            has_work=0
+            echo "Очередь NASA HLS пуста: образ не собирается, worker не запускается."
+          fi
+          echo "has_work=$has_work" >> "$GITHUB_OUTPUT"
+
       - name: Build worker image
+        if: steps.config.outputs.has_work == '1'
         run: docker build --tag agrona-hls:ci workers/hls
 
       - name: Run worker for one job
         id: worker
+        if: steps.config.outputs.has_work == '1'
         shell: bash
         run: |
           set -euo pipefail
