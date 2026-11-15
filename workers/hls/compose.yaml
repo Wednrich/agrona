@@ -1,0 +1,32 @@
+services:
+  hls:
+    build: .
+    image: agrona-hls:recovery-v2
+    init: true
+    restart: unless-stopped
+    read_only: true
+    user: "65534:65534"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 64
+    stop_grace_period: 150s
+    tmpfs: ["/tmp:size=128m,mode=1777"]
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Set the production Supabase URL}
+      SUPABASE_SERVICE_ROLE_KEY_FILE: /run/secrets/supabase_service_role
+      EARTHDATA_TOKEN_FILE: /run/secrets/earthdata_token
+      GDAL_CACHEMAX: "128"
+      PYTHONDONTWRITEBYTECODE: "1"
+    secrets: [supabase_service_role, earthdata_token]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+secrets:
+  supabase_service_role:
+    file: ${HLS_SECRETS_DIR:?Set an absolute secrets directory}/supabase_service_role
+  earthdata_token:
+    file: ${HLS_SECRETS_DIR:?Set an absolute secrets directory}/earthdata_token

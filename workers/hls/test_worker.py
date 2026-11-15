@@ -1,8 +1,11 @@
+import os
+import tempfile
 import unittest
 from contextlib import redirect_stderr
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from io import StringIO
+from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
 import requests
@@ -14,6 +17,54 @@ from rasterio.features import geometry_mask
 from rasterio.transform import from_origin
 
 from worker import summarize
+
+
+class SecretLoadingTest(unittest.TestCase):
+    names = worker.REQUIRED_SECRETS
+
+    def test_missing_secret_is_named(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(SystemExit, "Missing SUPABASE_URL"):
+                worker.load_secrets()
+
+    def test_secret_files_are_read_and_trimmed(self):
+        values = {
+            "SUPABASE_URL": "https://project.supabase.co\n",
+            "SUPABASE_SERVICE_ROLE_KEY": "private-key\n",
+            "EARTHDATA_TOKEN": "private-token\n",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            environment = {}
+            for name, value in values.items():
+                path = Path(directory) / name.lower()
+                path.write_text(value)
+                environment[name + "_FILE"] = str(path)
+            with patch.dict(os.environ, environment, clear=True):
+                worker.load_secrets()
+                self.assertEqual(os.environ["SUPABASE_URL"], "https://project.supabase.co")
+                self.assertEqual(os.environ["EARTHDATA_TOKEN"], "private-token")
+
+    def test_unreadable_secret_file_is_reported(self):
+        environment = {
+            "SUPABASE_URL": "https://project.supabase.co",
+            "SUPABASE_SERVICE_ROLE_KEY": "private-key",
+            "EARTHDATA_TOKEN_FILE": "/nonexistent/token",
+        }
+        with patch.dict(os.environ, environment, clear=True):
+            with self.assertRaisesRegex(SystemExit, "Cannot read EARTHDATA_TOKEN_FILE"):
+                worker.load_secrets()
+
+    def test_plain_http_supabase_url_is_rejected(self):
+        environment = {
+            "SUPABASE_URL": "http://example.test",
+            "SUPABASE_SERVICE_ROLE_KEY": "private-key",
+            "EARTHDATA_TOKEN": "private-token",
+        }
+        with patch.dict(os.environ, environment, clear=True):
+            with self.assertRaisesRegex(SystemExit, "https") as caught:
+                worker.load_secrets()
+        self.assertNotIn("private-", str(caught.exception))
+
 
 
 class HlsPixelTest(unittest.TestCase):
@@ -118,7 +169,7 @@ class HlsDownloadTest(unittest.TestCase):
         self.assertEqual(read.call_count, 2)
         sleep.assert_called_once_with(1)
 
-    @patch("worker.rpc")
+    @patch("worker.rpc", return_value=True)
     @patch("worker.discover")
     @patch("worker.read_raster_window")
     @patch("worker.band_urls")
@@ -139,9 +190,14 @@ class HlsDownloadTest(unittest.TestCase):
         self.assertEqual(rpc.call_args.args[1]["p_observations"], [cached, good])
         self.assertEqual(rpc.call_args.args[1]["p_state"], "partial")
         self.assertIn("Часть снимков", rpc.call_args.args[1]["p_warning"])
+        self.assertEqual(rpc.call_args.args[1]["p_failures"], [{
+            "conceptId": "bad", "revisionId": 1, "dataset": "HLSL30",
+            "reason": "asset_unavailable",
+        }])
+        self.assertEqual(rpc.call_args.args[0], "checkpoint_hls_job_v2")
         self.assertEqual(sleep.call_args_list, [call(1), call(2)])
 
-    @patch("worker.rpc")
+    @patch("worker.rpc", return_value=True)
     @patch("worker.discover")
     @patch("worker.read_granule")
     def test_auth_stops_job_and_saves_partial_observations(self, read, discover, rpc):
@@ -155,8 +211,22 @@ class HlsDownloadTest(unittest.TestCase):
         self.assertIn("HTTP 401", rpc.call_args.args[1]["p_warning"])
         self.assertNotIn("private-token", logs.getvalue())
 
+    @patch("worker.STOP_REQUESTED", True)
+    @patch("worker.rpc", return_value=True)
+    @patch("worker.discover")
+    @patch("worker.read_granule")
+    def test_shutdown_releases_lease_without_losing_saved_rows(self, read, discover, rpc):
+        cached = {"conceptId": "saved", "revisionId": 1, "acquiredAt": "2014-06-01"}
+        worker.process({"job_id": "lease", "analysis_year": 2014,
+                        "boundary": {}, "cached": [cached]}, "private-token")
+        read.assert_not_called()
+        checkpoint = rpc.call_args.args[1]
+        self.assertEqual(checkpoint["p_state"], "partial")
+        self.assertEqual(checkpoint["p_observations"], [cached])
+        self.assertEqual(checkpoint["p_failures"], [])
 
-    @patch("worker.rpc")
+
+    @patch("worker.rpc", return_value=True)
     @patch("worker.discover")
     @patch("worker.read_granule")
     @patch("worker.time.monotonic")

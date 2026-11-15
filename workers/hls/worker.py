@@ -4,10 +4,12 @@ import json
 import logging
 import os
 import re
+import signal
 import sys
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from urllib.parse import urlparse
 
 import numpy as np
@@ -26,6 +28,29 @@ HTTP = requests.Session()
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 ASSET_ATTEMPTS = 3
 ASSET_AUTH_STATUS = {401, 403}
+REQUIRED_SECRETS = ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "EARTHDATA_TOKEN")
+STOP_REQUESTED = False
+
+
+def request_stop(_signum, _frame):
+    global STOP_REQUESTED
+    STOP_REQUESTED = True
+
+
+def load_secrets():
+    # Container schedulers mount secrets as files; a shell host may pass values
+    # directly. Both are accepted, and a missing value is named explicitly.
+    for name in REQUIRED_SECRETS:
+        filename = os.environ.get(name + "_FILE")
+        if filename:
+            try:
+                os.environ[name] = Path(filename).read_text().strip()
+            except OSError:
+                raise SystemExit(f"Cannot read {name}_FILE") from None
+        if not os.environ.get(name):
+            raise SystemExit(f"Missing {name}: set it directly or via {name}_FILE")
+    if not os.environ["SUPABASE_URL"].startswith("https://"):
+        raise SystemExit("SUPABASE_URL must be an https:// URL")
 
 
 class HlsAssetError(RuntimeError):
@@ -248,10 +273,11 @@ def process(job, token):
     empty = {row["conceptId"]: row for row in cached if row.get("empty")}
     deadline = time.monotonic() + LEASE_SECONDS
     errors = False
+    failures = {}
     completed = 0
 
     def save(state="checkpoint", warning=None):
-        return rpc("checkpoint_hls_job", {
+        accepted = rpc("checkpoint_hls_job_v2", {
             "p_job": job["job_id"],
             "p_observations": sorted(observations.values(),
                 key=lambda row: (row["acquiredAt"], row["conceptId"])),
@@ -259,7 +285,12 @@ def process(job, token):
             "p_state": state,
             "p_warning": warning,
             "p_progress": completed > 0,
+            "p_failures": list(failures.values()),
         })
+        print(json.dumps({"event": "checkpoint", "state": state,
+                          "accepted": accepted, "observations": len(observations),
+                          "empty": len(empty), "failures": len(failures)}), flush=True)
+        return accepted
 
     unavailable = "Часть снимков NASA HLS временно недоступна."
     for product in COLLECTIONS:
@@ -267,6 +298,9 @@ def process(job, token):
             continue
         granules = iter(discover(job["boundary"], job["analysis_year"], product))
         while time.monotonic() < deadline:
+            if STOP_REQUESTED:
+                save("partial", "Worker остановлен; результаты сохранены.")
+                return
             try:
                 granule = next(granules)
                 concept = granule["meta"]["concept-id"]
@@ -286,10 +320,17 @@ def process(job, token):
             try:
                 row = read_granule(granule, product, job["boundary"], token, deadline)
             except HlsAuthorizationError as error:
+                failures[concept] = {"conceptId": concept, "revisionId": revision,
+                                     "dataset": product, "reason": "authorization"}
                 save("failed", str(error))
                 return
             except (HlsAssetError, requests.RequestException, ValueError):
                 errors = True
+                # Store only bounded categories, never provider diagnostics or signed URLs.
+                failures[concept] = {"conceptId": concept, "revisionId": revision,
+                                     "dataset": product, "reason": "asset_unavailable"}
+                if not save():
+                    return
                 continue
             if row is None:
                 # An empty new revision is a processed catalog entry. Preserve
@@ -317,8 +358,11 @@ def main():
     parser.add_argument("--smoke-field", help="Read one actual saved field and try HLS pixels without writing.")
     parser.add_argument("--year", type=int, default=datetime.now(timezone.utc).year-1)
     args = parser.parse_args()
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
     # Rasterio's GDAL callback can log raw diagnostics containing signed URLs.
     logging.getLogger("rasterio._env").disabled = True
+    load_secrets()
     token = os.environ["EARTHDATA_TOKEN"]
     if args.smoke_field:
         field = rpc("hls_field", {"p_field": args.smoke_field})
@@ -334,7 +378,7 @@ def main():
                     print(json.dumps(row))
                     return
         raise SystemExit("No usable pixels found.")
-    while True:
+    while not STOP_REQUESTED:
         try:
             jobs = (rpc("take_hls_job_for", {"p_field": args.field, "p_year": args.year})
                     if args.field else rpc("take_hls_job", {}))

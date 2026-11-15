@@ -1,0 +1,282 @@
+name: HLS worker
+
+# Free, periodic NASA HLS processing on GitHub-hosted runners.
+#
+# One run claims at most one Supabase job (worker --once), keeps its lease with
+# checkpoints through public.checkpoint_hls_job_v2 and exits. Progress stays in
+# PostgreSQL, so a later run resumes the same job without re-reading granules
+# whose conceptId/revisionId are already stored.
+#
+# The schedule stays inert until the repository variable
+# HLS_AUTOMATION_ENABLED=true is created after a verified manual run.
+# This is a periodic processor, not an always-on service: GitHub Actions jobs
+# are queued, delayed and time limited.
+
+on:
+  workflow_dispatch:
+    inputs:
+      field_id:
+        description: "Saved field UUID (empty: oldest queued HLS job)"
+        required: false
+        default: ""
+      year:
+        description: "Analysis year 2013..last complete year (empty: last complete year)"
+        required: false
+        default: ""
+      mode:
+        description: "process claims one job; smoke reads pixels without writing"
+        required: false
+        type: choice
+        default: process
+        options:
+          - process
+          - smoke
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+
+# GitHub-only serialization. A local Docker worker is not covered by this
+# group; the PostgreSQL lease (the job UUID changes on claim) is the real guard.
+concurrency:
+  group: hls-worker
+  cancel-in-progress: false
+
+jobs:
+  hls:
+    name: NASA HLS worker (one job per run)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && vars.HLS_AUTOMATION_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+      HLS_FIELD: ${{ inputs.field_id }}
+      HLS_YEAR: ${{ inputs.year }}
+      HLS_MODE: ${{ inputs.mode || 'process' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate configuration and stage secrets
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          missing=()
+          for name in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY EARTHDATA_TOKEN; do
+            if [ -z "${!name-}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error title=HLS secrets missing::Добавьте repository secret(s): ${missing[*]}. GitHub -> Settings -> Secrets and variables -> Actions -> New repository secret. Значения секретов не коммитьте и не присылайте в чат."
+            exit 1
+          fi
+          echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
+          echo "::add-mask::$EARTHDATA_TOKEN"
+
+          if [[ ! "$SUPABASE_URL" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "::error title=SUPABASE_URL is invalid::Ожидается https URL вида https://<project-ref>.supabase.co"
+            exit 1
+          fi
+
+          if [ -n "$HLS_FIELD" ] && [[ ! "$HLS_FIELD" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+            echo "::error title=field_id is invalid::Ожидается UUID поля из Supabase."
+            exit 1
+          fi
+
+          last_year=$(( $(date -u +%Y) - 1 ))
+          if [ -n "$HLS_YEAR" ]; then
+            if [[ ! "$HLS_YEAR" =~ ^[0-9]{4}$ ]] || [ "$HLS_YEAR" -lt 2013 ] || [ "$HLS_YEAR" -gt "$last_year" ]; then
+              echo "::error title=year is invalid::Ожидается завершённый год 2013..$last_year."
+              exit 1
+            fi
+          fi
+
+          case "$HLS_MODE" in
+            process|smoke) ;;
+            *)
+              echo "::error title=mode is invalid::Ожидается process или smoke."
+              exit 1
+              ;;
+          esac
+          if [ "$HLS_MODE" = "smoke" ] && [ -z "$HLS_FIELD" ]; then
+            echo "::error title=field_id is required::Режим smoke читает пиксели одного сохранённого поля, укажите field_id."
+            exit 1
+          fi
+
+          # Secret files keep the values out of the container environment and
+          # out of the `docker run` arguments. The directory dies with the runner.
+          secrets="$RUNNER_TEMP/hls-secrets"
+          umask 077
+          mkdir -p "$secrets"
+          printf '%s' "$SUPABASE_URL" > "$secrets/supabase_url"
+          printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" > "$secrets/supabase_service_role"
+          printf '%s' "$EARTHDATA_TOKEN" > "$secrets/earthdata_token"
+          # The container runs as uid 65534, so the staged files must be
+          # readable inside the container even though they are not writable.
+          chmod 0755 "$secrets"
+          chmod 0444 "$secrets"/*
+
+          echo "mode=$HLS_MODE field=${HLS_FIELD:-queued-job} year=${HLS_YEAR:-default}"
+
+          # Read-only queue snapshot: a stuck queue or an expired lease must be
+          # visible before the worker starts.
+          jobs="$RUNNER_TEMP/hls-jobs.json"
+          curl --fail --silent --show-error --get "$SUPABASE_URL/rest/v1/earth_observation_jobs" \
+            --data-urlencode 'select=status,started_at,completed_at,hls_no_progress' \
+            --data-urlencode 'provider=eq.NASA HLS' \
+            --data-urlencode 'dataset=eq.hls-v2-ndvi-v1' \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --output "$jobs"
+          jq -r '
+            "queue total=\(length)" +
+            " queued=\([.[] | select(.started_at == "-infinity")] | length)" +
+            " leased=\([.[] | select(.started_at != "-infinity" and .status == "running")] | length)" +
+            " succeeded=\([.[] | select(.status == "succeeded")] | length)" +
+            " failed=\([.[] | select(.status == "failed")] | length)"' "$jobs"
+          if [ "$(jq '[.[] | select(.started_at != "-infinity" and .status == "running")] | length' "$jobs")" != "0" ]; then
+            echo "::warning title=Active HLS lease detected::Другое задание уже арендовано (<15 мин). Аренда в PostgreSQL не даст перезаписать результаты, но этот запуск может остаться без работы."
+          fi
+
+      - name: Build worker image
+        run: docker build --tag agrona-hls:ci workers/hls
+
+      - name: Run worker for one job
+        id: worker
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          args=(--once)
+          if [ "$HLS_MODE" = "smoke" ]; then
+            default_year=$(( $(date -u +%Y) - 1 ))
+            args=(--smoke-field "$HLS_FIELD" --year "${HLS_YEAR:-$default_year}")
+          else
+            if [ -n "$HLS_FIELD" ]; then
+              args+=(--field "$HLS_FIELD")
+            fi
+            if [ -n "$HLS_YEAR" ]; then
+              args+=(--year "$HLS_YEAR")
+            fi
+          fi
+          echo "worker arguments: ${args[*]}"
+
+          status=0
+          # 900s > LEASE_SECONDS (720s) in worker.py. `timeout` signals the
+          # docker CLI, which forwards SIGTERM to the container, so the worker
+          # can checkpoint a partial job during --stop-timeout.
+          timeout --signal=TERM --kill-after=150s 900 \
+            docker run --rm --init --name agrona-hls-ci \
+              --read-only \
+              --user 65534:65534 \
+              --cap-drop ALL \
+              --security-opt no-new-privileges:true \
+              --cpus 1 \
+              --memory 1g \
+              --pids-limit 64 \
+              --stop-timeout 120 \
+              --tmpfs /tmp:size=256m,mode=1777 \
+              --volume "$RUNNER_TEMP/hls-secrets:/run/secrets:ro" \
+              --env SUPABASE_URL_FILE=/run/secrets/supabase_url \
+              --env SUPABASE_SERVICE_ROLE_KEY_FILE=/run/secrets/supabase_service_role \
+              --env EARTHDATA_TOKEN_FILE=/run/secrets/earthdata_token \
+              --env GDAL_CACHEMAX=128 \
+              --env PYTHONDONTWRITEBYTECODE=1 \
+              agrona-hls:ci python -u worker.py "${args[@]}" \
+            || status=$?
+
+          case "$status" in
+            0)
+              echo "worker exit code: 0"
+              ;;
+            124|137)
+              echo "::error title=HLS worker exceeded its time budget::Процесс не завершился за 900 секунд; проверьте аренду задания в Supabase."
+              ;;
+            *)
+              echo "::error title=HLS worker failed::Код возврата $status. Полный вывод выше; секреты не печатаются."
+              ;;
+          esac
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          {
+            echo "### NASA HLS worker"
+            echo ""
+            echo "| Параметр | Значение |"
+            echo "| --- | --- |"
+            echo "| Trigger | \`${GITHUB_EVENT_NAME}\` |"
+            echo "| Mode | \`${HLS_MODE}\` |"
+            echo "| Field | \`${HLS_FIELD:-queued job}\` |"
+            echo "| Year | \`${HLS_YEAR:-default}\` |"
+            echo "| Exit code | \`${status}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: Report Supabase state (read-only)
+        if: always() && steps.config.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          jobs="$RUNNER_TEMP/hls-jobs-after.json"
+          curl --fail --silent --show-error --get "$SUPABASE_URL/rest/v1/earth_observation_jobs" \
+            --data-urlencode 'select=status,started_at,completed_at,hls_no_progress' \
+            --data-urlencode 'provider=eq.NASA HLS' \
+            --data-urlencode 'dataset=eq.hls-v2-ndvi-v1' \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --output "$jobs"
+          summary=$(jq -r '
+            "queue total=\(length)" +
+            " queued=\([.[] | select(.started_at == "-infinity")] | length)" +
+            " leased=\([.[] | select(.started_at != "-infinity" and .status == "running")] | length)" +
+            " succeeded=\([.[] | select(.status == "succeeded")] | length)" +
+            " failed=\([.[] | select(.status == "failed")] | length)"' "$jobs")
+          echo "$summary"
+
+          {
+            echo ""
+            echo '```text'
+            echo "$summary"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -z "$HLS_FIELD" ]; then
+            exit 0
+          fi
+
+          metrics="$RUNNER_TEMP/hls-analytics.json"
+          curl --fail --silent --show-error --get "$SUPABASE_URL/rest/v1/field_analytics" \
+            --data-urlencode 'select=analysis_period,vegetation_metrics' \
+            --data-urlencode 'provider=eq.NASA HLS' \
+            --data-urlencode 'dataset=eq.hls-v2-ndvi-v1' \
+            --data-urlencode "field_id=eq.$HLS_FIELD" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --output "$metrics"
+          # Counts only: the checkpoint payload itself stays in Supabase.
+          rows=$(jq -r '
+            .[] | . as $row | ($row.vegetation_metrics.observations // []) as $observations |
+            "year=\($row.analysis_period)" +
+            " observations=\($observations | length)" +
+            " ndvi=\([$observations[] | select(.mean != null)] | length)" +
+            " empty=\(($row.vegetation_metrics.empty_granules // []) | length)" +
+            " failed=\(($row.vegetation_metrics.failed_granules // []) | length)"' "$metrics")
+          echo "${rows:-нет сохранённой аналитики для поля}"
+          {
+            echo ""
+            echo '```text'
+            echo "${rows:-нет сохранённой аналитики для поля}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove staged secrets
+        if: always()
+        shell: bash
+        run: rm -rf "${RUNNER_TEMP}/hls-secrets"
