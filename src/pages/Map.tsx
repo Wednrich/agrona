@@ -23,6 +23,7 @@ import {
   ListChecks,
   Sprout,
   BookOpen,
+  MessageSquare,
   Expand,
 } from "lucide-react";
 import { useData } from "../lib/data";
@@ -646,6 +647,16 @@ export default function MapPage() {
                     aria-hidden="true"
                   />
                 </Link>
+                {!demo && (
+                  <Link className="field-action" to={`/analytics/${field.id}?tab=advisor`}>
+                    <MessageSquare aria-hidden="true" />
+                    <span>
+                      <strong>ИИ-агроном</strong>
+                      <small>Задать вопрос о данных поля</small>
+                    </span>
+                    <ArrowUpRight className="field-action-arrow" aria-hidden="true" />
+                  </Link>
+                )}
               </nav>
               <details className="flow-details field-data">
                 <summary>Данные о поле</summary>

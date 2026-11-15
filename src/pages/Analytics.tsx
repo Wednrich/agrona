@@ -50,6 +50,7 @@ import {
 } from "../features/climate";
 import type { Observation } from "../lib/types";
 import { Button } from "../components/ui/button";
+import { AiAdvisorChat, ExplainAdvisor } from "../components/AiAdvisor";
 export default function Analytics() {
   const { fieldId } = useParams();
   const { data: farms, isLoading, error: farmsError } = useData();
@@ -57,7 +58,7 @@ export default function Analytics() {
   const field = farms?.fields.find((f) => f.id === fieldId);
   const [params] = useSearchParams();
   const [tab, setTab] = useState(() =>
-    params.get("tab") === "sources" ? "Источники" : "Климат",
+    params.get("tab") === "advisor" ? "ИИ-агроном" : params.get("tab") === "sources" ? "Источники" : "Климат",
   );
   const climateTab = !["Растительность", "Источники"].includes(tab);
   const [year, setYear] = useState(
@@ -140,6 +141,9 @@ export default function Analytics() {
   const climateGdd = powerMetrics(climateRows, climate?.days ?? 0).gdd5;
   const fmt = (n: number | null) => (n === null ? "—" : n.toFixed(1));
   const insightPeriod = { year, start, end };
+  const advisorScope = { fieldId: field.id, ...insightPeriod };
+  const advisorKey = `${user?.id}:${field.id}:${start}:${end}`;
+  const hasAdvisorPeriod = !!selectClimatePeriod([], year, start, end);
   const storedDemo = demo && usesStoredDemoPower(field, year);
   const seasons = farms?.seasons.filter((s) => s.field_id === field.id) ?? [];
   return (
@@ -206,6 +210,9 @@ export default function Analytics() {
           </Link>
         </div>
       </div>
+      {!demo && tab !== "ИИ-агроном" && hasAdvisorPeriod && (
+        <ExplainAdvisor key={advisorKey} scope={advisorScope} />
+      )}
       {climateTab && (
         <div className="data-note">
           <Sun size={18} />
@@ -233,6 +240,7 @@ export default function Analytics() {
           "Почва",
           "Риски",
           "Источники",
+          "ИИ-агроном",
         ].map((x) => (
           <button
             role="tab"
@@ -677,6 +685,14 @@ export default function Analytics() {
           demo={demo}
           insightPeriod={insightPeriod}
         />
+      )}
+      {hasAdvisorPeriod && (
+        <div hidden={tab !== "ИИ-агроном"}>
+          <AiAdvisorChat key={advisorKey} scope={advisorScope} demo={demo} />
+        </div>
+      )}
+      {tab === "ИИ-агроном" && !hasAdvisorPeriod && (
+        <p role="status">Выберите корректный период на вкладке «Климат».</p>
       )}
       {tab === "Почва" && (
         <section className="card">

@@ -62,6 +62,17 @@ Profiles reference auth users. Farms belong to profiles. Fields belong to farms.
 
 Vercel: Vite preset, `npm run build`, output `dist`. Netlify: same build/output with SPA rewrite in `public/_redirects`. Configure public Vite environment variables before building. Supabase is deployed separately. Never add the service-role key to Vite environment variables.
 
+### ИИ-агроном
+
+В аналитике нажмите «Объяснить мои данные» или откройте вкладку «ИИ-агроном». В севообороте объяснение доступно после сохранения варианта. Функция использует выбранный период наблюдений и проверяет принадлежность поля. DeepSeek выбирает факты и объяснения из подготовленного сервером контекста. Источники, цифры и обязательные оговорки формирует AGRONA. Чат хранит историю текущей беседы на странице.
+
+1. Проверьте список миграций целевого проекта и примените `20261115060000_ai_advisor.sql` после зависимых миграций. В отдельной тестовой базе выполните `supabase/tests/ai_advisor.sql`. Проверьте Edge Function через `deno check supabase/functions/ai-advisor/index.ts`.
+2. Разверните `ai-advisor` с проверкой JWT. На опубликованном сайте проверьте успешный ответ `/api/soil`. Если загрузчик SoilGrids размещён отдельно, укажите его доверенный URL в настройке Edge Function `AGRONA_SOIL_ENDPOINT`. Он должен принимать GeoJSON полигона с тем же форматом ответа, что и `/api/soil`.
+3. Добавьте `DEEPSEEK_API_KEY` в [Supabase Edge Function Secrets](https://supabase.com/dashboard/project/mcxzkbgnfqjbrlglfzki/functions/secrets). По умолчанию используется `deepseek-flash`. `DEEPSEEK_MODEL=deepseek-v4-pro` меняет модель на Pro.
+4. Обновите frontend на Vercel, проверьте доступ владельца и отказ для чужого поля. После согласования расходов установите `DEEPSEEK_ENABLED=true` в Supabase Secrets и проверьте объяснение на принадлежащем тестовому аккаунту поле за 2025 год.
+
+Открытие страницы не вызывает DeepSeek. Действуют серверные ограничения в три новых запроса в минуту и двенадцать за 24 часа на пользователя. Успешный ответ на тот же запрос переиспользуется до десяти минут. Учёт обращений и токенов хранится в таблице с доступом только серверной роли.
+
 ## Verification limits
 
 A successful frontend build does not establish that a hosted Supabase migration or RLS policy has been exercised. Validate registration, email confirmation, recovery, two-user isolation, geometry rejection, cache reuse and the complete farmer workflow against your configured staging project before production.

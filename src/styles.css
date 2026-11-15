@@ -685,6 +685,68 @@ td a {
   font-size: 14px;
   color: #53685b;
 }
+.advisor-chat,
+.advisor-explain {
+  margin-block: 1rem;
+}
+.advisor-chat > p {
+  max-width: 68ch;
+}
+.advisor-form,
+.advisor-answer {
+  display: grid;
+  gap: 0.75rem;
+}
+.advisor-form {
+  margin-block: 1rem;
+  max-width: 68ch;
+}
+.advisor-language {
+  display: grid;
+  gap: 0.35rem;
+  justify-self: start;
+}
+.advisor-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.advisor-form > button {
+  justify-self: start;
+}
+.advisor-explain button,
+.advisor-examples button {
+  white-space: normal;
+  text-align: left;
+}
+.advisor-answer,
+.advisor-turn {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #dce6df;
+  border-radius: 0.85rem;
+  background: #f6f9f6;
+  overflow-wrap: anywhere;
+}
+.advisor-turn .advisor-answer {
+  padding: 0;
+  border: none;
+}
+.advisor-answer p,
+.advisor-answer ul,
+.advisor-answer h4 {
+  margin: 0;
+}
+.advisor-answer ul {
+  list-style: disc;
+  padding-inline-start: 1.4rem;
+}
+.advisor-answer li + li {
+  margin-top: 0.4rem;
+}
+.advisor-answer small {
+  display: block;
+}
 .field-actions {
   display: grid;
   gap: 10px;

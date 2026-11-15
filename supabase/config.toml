@@ -22,3 +22,6 @@ verify_jwt = true
 
 [functions.srtm-terrain]
 verify_jwt = true
+
+[functions.ai-advisor]
+verify_jwt = true

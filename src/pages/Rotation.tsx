@@ -26,6 +26,17 @@ import { FieldPicker } from "../components/FieldPicker";
 import type { Scenario } from "../lib/types";
 import { Button } from "../components/ui/button";
 import SoilEstimate, { cachedSoil } from "../components/SoilEstimate";
+import { ExplainAdvisor } from "../components/AiAdvisor";
+
+function RotationAdvisor({ fieldId, scenario, scenarioId }: { fieldId: string; scenario: Scenario; scenarioId: string }) {
+  const period = scenario.constraints.period as { year?: number; start?: string; end?: string } | undefined;
+  if (typeof period?.year !== "number" || typeof period.start !== "string" || typeof period.end !== "string") {
+    return <p className="caption">Для объяснения пересчитайте сценарий с выбранным периодом.</p>;
+  }
+  return <ExplainAdvisor key={scenarioId} scenarioId={scenarioId} scope={{
+    fieldId, year: period.year, start: period.start, end: period.end,
+  }} />;
+}
 export default function Rotation() {
   const { fieldId } = useParams();
   const [params] = useSearchParams();
@@ -102,7 +113,7 @@ function RotationForm({
   const [sameSequences, setSameSequences] = useState(false);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState<string[]>([]);
+  const [saved, setSaved] = useState<Record<string, string>>({});
   const climate = useQuery({
     queryKey: [...rotationClimateKey(demo ? "demo" : user?.id, field), year],
     enabled:
@@ -235,7 +246,7 @@ function RotationForm({
       );
       setStrategies(result);
       setResultRevision(resultKey);
-      setSaved([]);
+      setSaved({});
       setStep(2);
       setMessage("");
     } catch (e) {
@@ -688,6 +699,7 @@ function RotationForm({
               {strategies[0].analysis_result.warnings[0]}
             </p>
           )}
+          {!demo && <p className="caption">Чтобы получить объяснение плана, сначала сохраните его.</p>}
           <div
             className={`strategy-grid${strategies[0]?.constraints.currentSequence ? " strategy-comparison" : ""}`}
           >
@@ -778,12 +790,14 @@ function RotationForm({
                 </details>
                 <Button
                   variant="outline"
-                  disabled={saving || saved.includes(s.name)}
+                  disabled={saving || Object.hasOwn(saved, s.name)}
                   onClick={async () => {
                     setSaving(true);
                     try {
+                      const scenarioId = crypto.randomUUID();
                       await save("rotation_scenarios", {
                         ...s,
+                        id: scenarioId,
                         analysis_result: {
                           ...s.analysis_result,
                           comparison: strategies.map(
@@ -795,7 +809,7 @@ function RotationForm({
                           ),
                         },
                       } as unknown as Record<string, unknown>);
-                      setSaved([...saved, s.name]);
+                      setSaved({ ...saved, [s.name]: scenarioId });
                       setMessage("Сценарий и сравнение сохранены");
                     } catch (e) {
                       setMessage(String(e));
@@ -805,12 +819,15 @@ function RotationForm({
                   }}
                 >
                   <Bookmark size={15} />
-                  {saved.includes(s.name)
+                  {Object.hasOwn(saved, s.name)
                     ? "Сохранено"
                     : i === 0
                       ? "Сохранить сравнение"
                       : "Сохранить этот вариант"}
                 </Button>
+                {!demo && Object.hasOwn(saved, s.name) && (
+                  <RotationAdvisor fieldId={field.id} scenario={s} scenarioId={saved[s.name]} />
+                )}
               </article>
             ))}
           </div>
@@ -886,7 +903,7 @@ function RotationForm({
                     setManualSequence(c.currentSequence);
                     setCurrentPlan("manual");
                   } else setCurrentPlan("");
-                  setSaved([]);
+                  setSaved(s.id ? { [s.name]: s.id } : {});
                   setSameSequences(false);
                   setStrategies(
                     s.analysis_result.comparison?.length
@@ -919,6 +936,7 @@ function RotationForm({
                 ))}
               </ul>
               <p>{s.analysis_result.warnings.join(" ")}</p>
+              {!demo && s.id && <RotationAdvisor fieldId={field.id} scenario={s} scenarioId={s.id} />}
             </details>
           ))}
         {!data.scenarios.some((s) => s.field_id === field.id) && (
